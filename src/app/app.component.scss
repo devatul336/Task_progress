@@ -1,0 +1,49 @@
+.sidenav-container { height: 100vh; }
+
+.sidenav {
+  width: 240px; background: #1e293b; color: white; border-right: none;
+  display: flex; flex-direction: column;
+}
+
+.sidenav-header {
+  display: flex; align-items: center; gap: 12px; padding: 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  .brand-icon { color: #6366f1; font-size: 32px; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+  .brand-name { font-size: 1.1rem; font-weight: 700; color: white; }
+  .brand-sub { font-size: 0.75rem; color: #94a3b8; }
+}
+
+.nav-list { padding: 16px 12px; flex: 1; overflow-y: auto; }
+
+.nav-group { margin-bottom: 20px; }
+.nav-group-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #475569; padding: 0 8px; margin-bottom: 6px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  border-radius: 10px; text-decoration: none; color: #94a3b8;
+  transition: all 0.2s; cursor: pointer; margin-bottom: 2px;
+  &:hover { background: rgba(255,255,255,0.08); color: white; }
+  &.active-nav { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 0.9rem; font-weight: 500; }
+}
+
+.main-content { display: flex; flex-direction: column; overflow: hidden; }
+
+.topbar {
+  background: white; border-bottom: 1px solid #e2e8f0; height: 64px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 100;
+  .menu-btn { color: #64748b; }
+  .toolbar-spacer { flex: 1; }
+}
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.user-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: 600; cursor: pointer;
+}
+
+.content-area { flex: 1; overflow-y: auto; }

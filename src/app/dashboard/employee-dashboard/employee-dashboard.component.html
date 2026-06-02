@@ -1,0 +1,284 @@
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1 class="dashboard-title">
+        <mat-icon class="title-icon">dashboard</mat-icon>
+        My Progress Dashboard
+      </h1>
+      <p class="subtitle" *ngIf="dashboard">Welcome back, <strong>{{ dashboard.employeeName }}</strong></p>
+    </div>
+    <div class="header-right">
+      <button mat-raised-button color="primary" routerLink="/tasks/create">
+        <mat-icon>add</mat-icon> New Task
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    <p>Loading your dashboard...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && dashboard">
+
+    <!-- KPI Score Cards -->
+    <div class="score-cards-grid">
+      <div class="score-card" [class]="getScoreClass(dashboard.overallProductivityScore)">
+        <div class="score-icon"><mat-icon>trending_up</mat-icon></div>
+        <div class="score-content">
+          <span class="score-value">{{ dashboard.overallProductivityScore | number:'1.0-1' }}%</span>
+          <span class="score-label">Overall Score</span>
+        </div>
+      </div>
+      <div class="score-card score-blue">
+        <div class="score-icon"><mat-icon>task_alt</mat-icon></div>
+        <div class="score-content">
+          <span class="score-value">{{ dashboard.taskCompletionRate | number:'1.0-1' }}%</span>
+          <span class="score-label">Task Completion</span>
+        </div>
+      </div>
+      <div class="score-card score-purple">
+        <div class="score-icon"><mat-icon>schedule</mat-icon></div>
+        <div class="score-content">
+          <span class="score-value">{{ dashboard.onTimeCompletionRate | number:'1.0-1' }}%</span>
+          <span class="score-label">On-Time Rate</span>
+        </div>
+      </div>
+      <div class="score-card score-teal">
+        <div class="score-icon"><mat-icon>flag</mat-icon></div>
+        <div class="score-content">
+          <span class="score-value">{{ dashboard.averageKPIAchievement | number:'1.0-1' }}%</span>
+          <span class="score-label">KPI Achievement</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Summary Panels -->
+    <div class="summary-panels">
+      <mat-card class="summary-panel">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="panel-icon today-icon">today</mat-icon>
+          <mat-card-title>Today</mat-card-title>
+          <mat-card-subtitle>{{ dashboard.todayTasks.total }} tasks</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="task-stats">
+            <div class="stat-item todo"><span>{{ dashboard.todayTasks.toDo }}</span><label>To Do</label></div>
+            <div class="stat-item progress"><span>{{ dashboard.todayTasks.inProgress }}</span><label>In Progress</label></div>
+            <div class="stat-item done"><span>{{ dashboard.todayTasks.completed }}</span><label>Done</label></div>
+            <div class="stat-item overdue"><span>{{ dashboard.todayTasks.overdue }}</span><label>Overdue</label></div>
+          </div>
+          <mat-progress-bar mode="determinate" [value]="dashboard.todayTasks.completionRate" color="primary" class="completion-bar"></mat-progress-bar>
+          <p class="completion-text">{{ dashboard.todayTasks.completionRate | number:'1.0-1' }}% complete</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-panel">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="panel-icon week-icon">date_range</mat-icon>
+          <mat-card-title>This Week</mat-card-title>
+          <mat-card-subtitle>{{ dashboard.weekTasks.total }} tasks</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="task-stats">
+            <div class="stat-item todo"><span>{{ dashboard.weekTasks.toDo }}</span><label>To Do</label></div>
+            <div class="stat-item progress"><span>{{ dashboard.weekTasks.inProgress }}</span><label>In Progress</label></div>
+            <div class="stat-item done"><span>{{ dashboard.weekTasks.completed }}</span><label>Done</label></div>
+            <div class="stat-item overdue"><span>{{ dashboard.weekTasks.overdue }}</span><label>Overdue</label></div>
+          </div>
+          <mat-progress-bar mode="determinate" [value]="dashboard.weekTasks.completionRate" color="accent" class="completion-bar"></mat-progress-bar>
+          <p class="completion-text">{{ dashboard.weekTasks.completionRate | number:'1.0-1' }}% complete</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-panel">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="panel-icon month-icon">calendar_month</mat-icon>
+          <mat-card-title>This Month</mat-card-title>
+          <mat-card-subtitle>{{ dashboard.monthTasks.total }} tasks</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="task-stats">
+            <div class="stat-item todo"><span>{{ dashboard.monthTasks.toDo }}</span><label>To Do</label></div>
+            <div class="stat-item progress"><span>{{ dashboard.monthTasks.inProgress }}</span><label>In Progress</label></div>
+            <div class="stat-item done"><span>{{ dashboard.monthTasks.completed }}</span><label>Done</label></div>
+            <div class="stat-item overdue"><span>{{ dashboard.monthTasks.overdue }}</span><label>Overdue</label></div>
+          </div>
+          <mat-progress-bar mode="determinate" [value]="dashboard.monthTasks.completionRate" color="warn" class="completion-bar"></mat-progress-bar>
+          <p class="completion-text">{{ dashboard.monthTasks.completionRate | number:'1.0-1' }}% complete</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <mat-card class="chart-card wide">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>show_chart</mat-icon>
+          <mat-card-title>Productivity Trend (Last 30 Days)</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="chart-container">
+            <canvas baseChart [data]="trendChartData" [type]="trendChartType" [options]="trendChartOptions"></canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="chart-col">
+        <mat-card class="chart-card half">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>donut_small</mat-icon>
+            <mat-card-title>Tasks by Status</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container">
+              <canvas baseChart [data]="statusChartData" [type]="statusChartType" [options]="statusChartOptions"></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="chart-card half">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>bar_chart</mat-icon>
+            <mat-card-title>Tasks by Priority</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container">
+              <canvas baseChart [data]="priorityChartData" [type]="priorityChartType" [options]="priorityChartOptions"></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Tasks Lists Row -->
+    <div class="tasks-row">
+      <!-- Overdue Tasks -->
+      <mat-card class="task-list-card danger" *ngIf="dashboard.overdueTasks?.length">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="danger-icon">warning</mat-icon>
+          <mat-card-title>Overdue Tasks</mat-card-title>
+          <mat-card-subtitle>{{ dashboard.overdueTasks.length }} tasks need attention</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="task-item" *ngFor="let task of dashboard.overdueTasks">
+            <div class="task-info">
+              <span class="task-title">{{ task.title }}</span>
+              <div class="task-meta">
+                <mat-chip class="priority-chip" [class]="getPriorityClass(task.priorityName)">{{ task.priorityName }}</mat-chip>
+                <span class="due-badge overdue">{{ getDaysLeft(task.dueDate) }}</span>
+              </div>
+            </div>
+            <mat-progress-bar mode="determinate" [value]="task.completionPercentage" color="warn"></mat-progress-bar>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Upcoming Deadlines -->
+      <mat-card class="task-list-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="upcoming-icon">access_time</mat-icon>
+          <mat-card-title>Upcoming Deadlines</mat-card-title>
+          <mat-card-subtitle>Next 7 days</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="task-item" *ngFor="let task of dashboard.upcomingDeadlines">
+            <div class="task-info">
+              <span class="task-title">{{ task.title }}</span>
+              <div class="task-meta">
+                <mat-icon class="status-icon small">{{ getStatusIcon(task.statusName) }}</mat-icon>
+                <span class="status-text">{{ task.statusName }}</span>
+                <span class="due-badge" [class.urgent]="getDaysLeft(task.dueDate).includes('1d') || getDaysLeft(task.dueDate).includes('today')">
+                  {{ getDaysLeft(task.dueDate) }}
+                </span>
+              </div>
+            </div>
+            <mat-progress-bar mode="determinate" [value]="task.completionPercentage" color="primary"></mat-progress-bar>
+          </div>
+          <p class="empty-state" *ngIf="!dashboard.upcomingDeadlines?.length">
+            <mat-icon>check_circle</mat-icon> No upcoming deadlines. Great work!
+          </p>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Recently Completed -->
+      <mat-card class="task-list-card success">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="success-icon">check_circle</mat-icon>
+          <mat-card-title>Recently Completed</mat-card-title>
+          <mat-card-subtitle>Latest achievements</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="task-item completed" *ngFor="let task of dashboard.recentlyCompleted">
+            <div class="task-info">
+              <span class="task-title done-text">{{ task.title }}</span>
+              <div class="task-meta">
+                <span class="completed-date">{{ formatDate(task.completedDate || task.dueDate) }}</span>
+                <span class="hours-badge" *ngIf="task.actualHours">{{ task.actualHours }}h actual</span>
+              </div>
+            </div>
+          </div>
+          <p class="empty-state" *ngIf="!dashboard.recentlyCompleted?.length">
+            No completed tasks yet.
+          </p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- KPIs & Goals Row -->
+    <div class="kpi-goals-row">
+      <!-- Active KPIs -->
+      <mat-card class="kpi-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>flag</mat-icon>
+          <mat-card-title>Active KPIs</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="kpi-item" *ngFor="let kpi of dashboard.activeKPIs">
+            <div class="kpi-header">
+              <span class="kpi-name">{{ kpi.kpiName }}</span>
+              <mat-chip class="kpi-category">{{ kpi.category }}</mat-chip>
+            </div>
+            <div class="kpi-values">
+              <span class="kpi-achieved">{{ kpi.achievedValue }} / {{ kpi.targetValue }} {{ kpi.unit }}</span>
+              <span class="kpi-pct" [class.kpi-above]="kpi.achievementPercentage >= 100" [class.kpi-below]="kpi.achievementPercentage < 60">
+                {{ kpi.achievementPercentage | number:'1.0-1' }}%
+              </span>
+            </div>
+            <mat-progress-bar mode="determinate" [value]="kpi.achievementPercentage > 100 ? 100 : kpi.achievementPercentage"
+              [color]="kpi.achievementPercentage >= 80 ? 'primary' : kpi.achievementPercentage >= 50 ? 'accent' : 'warn'">
+            </mat-progress-bar>
+          </div>
+          <p class="empty-state" *ngIf="!dashboard.activeKPIs?.length">No active KPIs assigned.</p>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Active Goals -->
+      <mat-card class="goals-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>emoji_events</mat-icon>
+          <mat-card-title>My Goals</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="goal-item" *ngFor="let goal of dashboard.activeGoals">
+            <div class="goal-header">
+              <span class="goal-title">{{ goal.title }}</span>
+              <mat-chip class="goal-status" [class]="'goal-' + goal.statusName.toLowerCase().replace(' ','-')">{{ goal.statusName }}</mat-chip>
+            </div>
+            <div class="goal-meta">
+              <span class="goal-category">{{ goal.category }}</span>
+              <span class="goal-due" [class.overdue]="goal.isOverdue">Due: {{ formatDate(goal.targetDate) }}</span>
+            </div>
+            <mat-progress-bar mode="determinate" [value]="goal.progressPercentage" color="primary" class="goal-bar"></mat-progress-bar>
+            <span class="goal-pct">{{ goal.progressPercentage }}% complete</span>
+          </div>
+          <p class="empty-state" *ngIf="!dashboard.activeGoals?.length">No active goals. <a routerLink="/goals/create">Set a goal</a></p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+  </ng-container>
+</div>

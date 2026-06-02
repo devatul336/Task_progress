@@ -1,0 +1,113 @@
+<div class="board-container">
+
+  <!-- Header -->
+  <div class="board-header">
+    <div class="header-left">
+      <h1 class="board-title"><mat-icon>view_kanban</mat-icon> Task Board</h1>
+    </div>
+    <div class="header-filters">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search tasks</mat-label>
+        <input matInput [(ngModel)]="searchText" placeholder="Task name...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Priority</mat-label>
+        <mat-select [(ngModel)]="filterPriority">
+          <mat-option value="">All</mat-option>
+          <mat-option value="4">Critical</mat-option>
+          <mat-option value="3">High</mat-option>
+          <mat-option value="2">Medium</mat-option>
+          <mat-option value="1">Low</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-raised-button color="primary" routerLink="/tasks/create">
+        <mat-icon>add</mat-icon> Add Task
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
+
+  <!-- Kanban Board -->
+  <div class="kanban-board" *ngIf="!loading">
+    <div class="kanban-column" *ngFor="let col of filteredColumns" [class]="col.colorClass">
+
+      <!-- Column Header -->
+      <div class="col-header">
+        <div class="col-title">
+          <mat-icon>{{ col.icon }}</mat-icon>
+          <span>{{ col.label }}</span>
+        </div>
+        <mat-chip class="count-badge">{{ col.tasks.length }}</mat-chip>
+      </div>
+
+      <!-- Task Cards -->
+      <div class="cards-list">
+        <div class="task-card" *ngFor="let task of col.tasks" [class.overdue-card]="isOverdue(task)">
+
+          <!-- Priority Indicator -->
+          <div class="priority-bar" [class]="getPriorityClass(task.priority)"></div>
+
+          <!-- Task Content -->
+          <div class="card-body">
+            <div class="card-header">
+              <span class="task-title">{{ task.title }}</span>
+              <button mat-icon-button [matMenuTriggerFor]="taskMenu" class="card-menu-btn">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #taskMenu="matMenu">
+                <button mat-menu-item *ngIf="task.status !== 2" (click)="moveTask(task, 2)">
+                  <mat-icon>pending</mat-icon> Move to In Progress
+                </button>
+                <button mat-menu-item *ngIf="task.status !== 3" (click)="moveTask(task, 3)">
+                  <mat-icon>rate_review</mat-icon> Move to Review
+                </button>
+                <button mat-menu-item *ngIf="task.status !== 4" (click)="moveTask(task, 4)">
+                  <mat-icon>check_circle</mat-icon> Mark Complete
+                </button>
+                <button mat-menu-item *ngIf="task.status !== 5" (click)="moveTask(task, 5)">
+                  <mat-icon>pause_circle</mat-icon> Put On Hold
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item [routerLink]="['/tasks', task.taskItemId]">
+                  <mat-icon>open_in_new</mat-icon> View Details
+                </button>
+              </mat-menu>
+            </div>
+
+            <p class="card-desc" *ngIf="task.description">{{ task.description | slice:0:80 }}{{ task.description.length > 80 ? '...' : '' }}</p>
+
+            <div class="card-tags" *ngIf="task.projectName">
+              <mat-chip class="project-chip">{{ task.projectName }}</mat-chip>
+            </div>
+
+            <mat-progress-bar mode="determinate" [value]="task.completionPercentage" color="primary" class="task-progress"></mat-progress-bar>
+            <span class="progress-text">{{ task.completionPercentage }}%</span>
+
+            <div class="card-footer">
+              <div class="assignee-info">
+                <div class="mini-avatar">{{ task.assignedToEmployeeName.charAt(0) }}</div>
+                <span class="assignee-name">{{ task.assignedToEmployeeName }}</span>
+              </div>
+              <div class="card-meta-right">
+                <mat-chip class="priority-chip-small" [class]="getPriorityClass(task.priority)">{{ getPriorityLabel(task.priority) }}</mat-chip>
+                <span class="due-indicator" [class.overdue-text]="isOverdue(task)">
+                  <mat-icon class="tiny-icon">{{ isOverdue(task) ? 'warning' : 'schedule' }}</mat-icon>
+                  {{ getDaysLeft(task.dueDate) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-col" *ngIf="!col.tasks.length">
+          <mat-icon>inbox</mat-icon>
+          <span>No tasks here</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

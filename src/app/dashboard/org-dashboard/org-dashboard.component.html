@@ -1,0 +1,304 @@
+<div class="dashboard-container">
+
+  <div class="dashboard-header">
+    <h1 class="dashboard-title"><mat-icon>corporate_fare</mat-icon> Organization Dashboard</h1>
+    <p class="subtitle">Complete organizational performance insights</p>
+  </div>
+
+  <div class="loading-state" *ngIf="loading"><mat-progress-bar mode="indeterminate"></mat-progress-bar></div>
+
+  <ng-container *ngIf="!loading && dashboard">
+
+    <!-- Top KPI Metrics -->
+    <div class="big-metrics-grid">
+      <div class="big-metric-card">
+        <div class="bm-icon blue"><mat-icon>people</mat-icon></div>
+        <div class="bm-content">
+          <span class="bm-value">{{ dashboard.totalEmployees }}</span>
+          <span class="bm-label">Active Employees</span>
+        </div>
+      </div>
+      <div class="big-metric-card">
+        <div class="bm-icon purple"><mat-icon>account_tree</mat-icon></div>
+        <div class="bm-content">
+          <span class="bm-value">{{ dashboard.activeProjects }}</span>
+          <span class="bm-label">Active Projects</span>
+        </div>
+      </div>
+      <div class="big-metric-card">
+        <div class="bm-icon green"><mat-icon>task_alt</mat-icon></div>
+        <div class="bm-content">
+          <span class="bm-value">{{ dashboard.organizationTaskCompletionRate | number:'1.0-1' }}%</span>
+          <span class="bm-label">Task Completion Rate</span>
+        </div>
+      </div>
+      <div class="big-metric-card">
+        <div class="bm-icon teal"><mat-icon>flag</mat-icon></div>
+        <div class="bm-content">
+          <span class="bm-value">{{ dashboard.organizationKPIAchievementRate | number:'1.0-1' }}%</span>
+          <span class="bm-label">KPI Achievement</span>
+        </div>
+      </div>
+      <div class="big-metric-card">
+        <div class="bm-icon orange"><mat-icon>assignment_late</mat-icon></div>
+        <div class="bm-content">
+          <span class="bm-value">{{ dashboard.overdueTasks }}</span>
+          <span class="bm-label">Overdue Tasks</span>
+        </div>
+      </div>
+      <div class="big-metric-card">
+        <div class="bm-icon red"><mat-icon>warning</mat-icon></div>
+        <div class="bm-content">
+          <span class="bm-value">{{ dashboard.overdueProjects }}</span>
+          <span class="bm-label">Overdue Projects</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Trend + Status Doughnut -->
+    <div class="charts-top-row">
+      <mat-card class="trend-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>trending_up</mat-icon>
+          <mat-card-title>6-Month Task Trend</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="chart-h350">
+            <canvas baseChart [data]="trendChartData" [type]="trendChartType" [options]="trendChartOptions"></canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="side-charts">
+        <mat-card class="donut-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>donut_small</mat-icon>
+            <mat-card-title>Tasks by Status</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-h200">
+              <canvas baseChart [data]="statusChartData" [type]="statusChartType" [options]="statusChartOptions"></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="this-month-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>calendar_month</mat-icon>
+            <mat-card-title>This Month</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="month-stats">
+              <div class="ms-item">
+                <span class="ms-val total">{{ dashboard.totalTasksThisMonth }}</span>
+                <span class="ms-lbl">Total</span>
+              </div>
+              <div class="ms-item">
+                <span class="ms-val done">{{ dashboard.completedTasksThisMonth }}</span>
+                <span class="ms-lbl">Done</span>
+              </div>
+              <div class="ms-item">
+                <span class="ms-val overdue-val">{{ dashboard.overdueTasks }}</span>
+                <span class="ms-lbl">Overdue</span>
+              </div>
+            </div>
+            <mat-progress-bar mode="determinate"
+              [value]="dashboard.totalTasksThisMonth > 0 ? (dashboard.completedTasksThisMonth / dashboard.totalTasksThisMonth) * 100 : 0"
+              color="primary" class="big-bar"></mat-progress-bar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Department Performance Chart -->
+    <mat-card class="dept-chart-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>domain</mat-icon>
+        <mat-card-title>Department Performance</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-h280">
+          <canvas baseChart [data]="deptChartData" [type]="deptChartType" [options]="deptChartOptions"></canvas>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Weekly Org Progress -->
+    <mat-card class="weekly-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>stacked_bar_chart</mat-icon>
+        <mat-card-title>Weekly Organization Progress</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-h250">
+          <canvas baseChart [data]="weeklyChartData" [type]="weeklyChartType" [options]="weeklyChartOptions"></canvas>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Tabs: Performers, At-Risk, Projects -->
+    <mat-card class="tabs-card">
+      <mat-tab-group>
+        <!-- Top Performers -->
+        <mat-tab label="🏆 Top Performers">
+          <div class="tab-content">
+            <table mat-table [dataSource]="dashboard.topPerformers" class="perf-table">
+              <ng-container matColumnDef="rank">
+                <th mat-header-cell *matHeaderCellDef>#</th>
+                <td mat-cell *matCellDef="let emp; let i = index">
+                  <span class="rank-badge" [class.gold]="i===0" [class.silver]="i===1" [class.bronze]="i===2">{{ i+1 }}</span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="employeeName">
+                <th mat-header-cell *matHeaderCellDef>Employee</th>
+                <td mat-cell *matCellDef="let emp">
+                  <div class="emp-cell">
+                    <div class="avatar gold-bg" *ngIf="dashboard.topPerformers.indexOf(emp) === 0">{{ emp.employeeName.charAt(0) }}</div>
+                    <div class="avatar" *ngIf="dashboard.topPerformers.indexOf(emp) !== 0">{{ emp.employeeName.charAt(0) }}</div>
+                    <div>
+                      <div class="emp-name">{{ emp.employeeName }}</div>
+                      <div class="emp-dept">{{ emp.departmentName }}</div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="departmentName">
+                <th mat-header-cell *matHeaderCellDef>Department</th>
+                <td mat-cell *matCellDef="let emp">{{ emp.departmentName }}</td>
+              </ng-container>
+              <ng-container matColumnDef="totalTasks">
+                <th mat-header-cell *matHeaderCellDef>Tasks</th>
+                <td mat-cell *matCellDef="let emp">{{ emp.totalTasks }}</td>
+              </ng-container>
+              <ng-container matColumnDef="taskCompletionRate">
+                <th mat-header-cell *matHeaderCellDef>Task %</th>
+                <td mat-cell *matCellDef="let emp">
+                  <div class="rate-cell">
+                    <mat-progress-bar mode="determinate" [value]="emp.taskCompletionRate" color="primary"></mat-progress-bar>
+                    <span>{{ emp.taskCompletionRate | number:'1.0-1' }}%</span>
+                  </div>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="kpiAchievementRate">
+                <th mat-header-cell *matHeaderCellDef>KPI %</th>
+                <td mat-cell *matCellDef="let emp">{{ emp.kpiAchievementRate | number:'1.0-1' }}%</td>
+              </ng-container>
+              <ng-container matColumnDef="overallScore">
+                <th mat-header-cell *matHeaderCellDef>Score</th>
+                <td mat-cell *matCellDef="let emp">
+                  <span class="score-badge" [style.background]="getScoreColor(emp.overallScore) + '20'" [style.color]="getScoreColor(emp.overallScore)">
+                    {{ emp.overallScore | number:'1.0-1' }}
+                  </span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="performanceBand">
+                <th mat-header-cell *matHeaderCellDef>Band</th>
+                <td mat-cell *matCellDef="let emp">
+                  <mat-chip class="band-chip" [class]="getBandClass(emp.performanceBand)">{{ emp.performanceBand }}</mat-chip>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="perfColumns; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: perfColumns;"></tr>
+            </table>
+          </div>
+        </mat-tab>
+
+        <!-- Department Performance -->
+        <mat-tab label="🏢 Department Summary">
+          <div class="tab-content">
+            <table mat-table [dataSource]="dashboard.departmentPerformance" class="perf-table">
+              <ng-container matColumnDef="departmentName">
+                <th mat-header-cell *matHeaderCellDef>Department</th>
+                <td mat-cell *matCellDef="let dept"><strong>{{ dept.departmentName }}</strong></td>
+              </ng-container>
+              <ng-container matColumnDef="employeeCount">
+                <th mat-header-cell *matHeaderCellDef>Employees</th>
+                <td mat-cell *matCellDef="let dept">{{ dept.employeeCount }}</td>
+              </ng-container>
+              <ng-container matColumnDef="totalTasks">
+                <th mat-header-cell *matHeaderCellDef>Total Tasks</th>
+                <td mat-cell *matCellDef="let dept">{{ dept.totalTasks }}</td>
+              </ng-container>
+              <ng-container matColumnDef="completedTasks">
+                <th mat-header-cell *matHeaderCellDef>Completed</th>
+                <td mat-cell *matCellDef="let dept" class="done-count">{{ dept.completedTasks }}</td>
+              </ng-container>
+              <ng-container matColumnDef="taskCompletionRate">
+                <th mat-header-cell *matHeaderCellDef>Completion Rate</th>
+                <td mat-cell *matCellDef="let dept">
+                  <div class="rate-cell">
+                    <mat-progress-bar mode="determinate" [value]="dept.taskCompletionRate"
+                      [color]="dept.taskCompletionRate >= 70 ? 'primary' : 'warn'"></mat-progress-bar>
+                    <span>{{ dept.taskCompletionRate | number:'1.0-1' }}%</span>
+                  </div>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="overallScore">
+                <th mat-header-cell *matHeaderCellDef>Score</th>
+                <td mat-cell *matCellDef="let dept">
+                  <span class="score-badge" [style.background]="getScoreColor(dept.overallScore) + '20'" [style.color]="getScoreColor(dept.overallScore)">
+                    {{ dept.overallScore | number:'1.0-1' }}
+                  </span>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="deptColumns; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: deptColumns;"></tr>
+            </table>
+          </div>
+        </mat-tab>
+
+        <!-- At-Risk -->
+        <mat-tab label="⚠️ Needs Attention">
+          <div class="tab-content">
+            <div class="at-risk-grid" *ngIf="dashboard.atRiskEmployees?.length">
+              <div class="risk-card" *ngFor="let emp of dashboard.atRiskEmployees">
+                <div class="risk-header">
+                  <div class="avatar risk-avatar">{{ emp.employeeName.charAt(0) }}</div>
+                  <div>
+                    <div class="emp-name">{{ emp.employeeName }}</div>
+                    <div class="emp-dept">{{ emp.departmentName }}</div>
+                  </div>
+                </div>
+                <div class="risk-stats">
+                  <div class="rs-item"><span class="rs-val">{{ emp.taskCompletionRate | number:'1.0-1' }}%</span><span class="rs-lbl">Task Rate</span></div>
+                  <div class="rs-item"><span class="rs-val overdue-val">{{ emp.overdueTasks }}</span><span class="rs-lbl">Overdue</span></div>
+                  <div class="rs-item"><span class="rs-val score-low">{{ emp.overallScore | number:'1.0-0' }}</span><span class="rs-lbl">Score</span></div>
+                </div>
+                <mat-chip class="band-chip" [class]="getBandClass(emp.performanceBand)">{{ emp.performanceBand }}</mat-chip>
+              </div>
+            </div>
+            <p class="empty-state" *ngIf="!dashboard.atRiskEmployees?.length">
+              <mat-icon>check_circle</mat-icon> No at-risk employees. Great organizational health!
+            </p>
+          </div>
+        </mat-tab>
+
+        <!-- Critical Projects -->
+        <mat-tab label="🚨 Critical Projects">
+          <div class="tab-content">
+            <div class="critical-grid" *ngIf="dashboard.criticalProjects?.length">
+              <mat-card class="critical-proj-card" *ngFor="let proj of dashboard.criticalProjects">
+                <mat-card-header>
+                  <mat-icon mat-card-avatar class="critical-icon">warning</mat-icon>
+                  <mat-card-title>{{ proj.name }}</mat-card-title>
+                  <mat-card-subtitle>{{ proj.projectManagerName }} | Due: {{ formatDate(proj.endDate) }}</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="proj-metrics">
+                    <span>{{ proj.completedTasks }}/{{ proj.totalTasks }} tasks done</span>
+                    <span [style.color]="getScoreColor(proj.completionPercentage)">{{ proj.completionPercentage }}% complete</span>
+                  </div>
+                  <mat-progress-bar mode="determinate" [value]="proj.completionPercentage" color="warn"></mat-progress-bar>
+                </mat-card-content>
+              </mat-card>
+            </div>
+            <p class="empty-state" *ngIf="!dashboard.criticalProjects?.length">
+              <mat-icon>check_circle</mat-icon> No critical projects at risk.
+            </p>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card>
+
+  </ng-container>
+</div>

@@ -1,0 +1,121 @@
+:host { display: block; }
+.dashboard-container { padding: 24px; background: #f8fafc; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+
+.dashboard-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+  .dashboard-title { display: flex; align-items: center; gap: 8px; font-size: 1.75rem; font-weight: 700; color: #1e293b; margin: 0;
+    mat-icon { color: #6366f1; font-size: 2rem; } }
+  .subtitle { color: #64748b; margin: 4px 0 0; }
+}
+
+.loading-state { padding: 48px; }
+
+.metrics-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px;
+  @media (max-width: 1200px) { grid-template-columns: repeat(3, 1fr); }
+}
+
+.metric-card {
+  background: white; border-radius: 16px; padding: 20px; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 4px solid;
+  mat-icon { font-size: 32px; margin-bottom: 8px; }
+  .metric-value { display: block; font-size: 1.75rem; font-weight: 700; color: #1e293b; }
+  .metric-label { font-size: 0.8rem; color: #64748b; }
+  &.blue { border-color: #3b82f6; mat-icon { color: #3b82f6; } }
+  &.green { border-color: #10b981; mat-icon { color: #10b981; } }
+  &.purple { border-color: #8b5cf6; mat-icon { color: #8b5cf6; } }
+  &.orange { border-color: #f59e0b; mat-icon { color: #f59e0b; } }
+  &.red { border-color: #ef4444; mat-icon { color: #ef4444; } }
+}
+
+.team-summary-card {
+  border-radius: 16px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important; margin-bottom: 24px;
+}
+
+.summary-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px;
+}
+
+.s-item {
+  text-align: center; padding: 12px 8px; border-radius: 10px;
+  span { display: block; font-size: 1.5rem; font-weight: 700; }
+  label { font-size: 0.7rem; color: #64748b; }
+  &.s-todo { background: #eff6ff; span { color: #3b82f6; } }
+  &.s-progress { background: #fef3c7; span { color: #d97706; } }
+  &.s-review { background: #f3e8ff; span { color: #7c3aed; } }
+  &.s-done { background: #d1fae5; span { color: #059669; } }
+  &.s-hold { background: #f1f5f9; span { color: #64748b; } }
+  &.s-overdue { background: #fee2e2; span { color: #dc2626; } }
+}
+
+.big-bar { height: 10px !important; border-radius: 5px !important; }
+
+.charts-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+.chart-card { border-radius: 16px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important; }
+.chart-container { position: relative; width: 100%; }
+.h300 { height: 300px; }
+
+.perf-table-card { border-radius: 16px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important; margin-bottom: 24px; }
+
+.table-scroll { overflow-x: auto; }
+.perf-table { width: 100%; }
+.perf-table th { background: #f8fafc; font-weight: 600; color: #475569; font-size: 0.8rem; }
+.perf-table td { font-size: 0.85rem; }
+
+.rank-badge {
+  width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85rem; background: #f1f5f9; color: #64748b;
+  &.gold { background: #fef3c7; color: #d97706; }
+  &.silver { background: #f1f5f9; color: #94a3b8; }
+  &.bronze { background: #fce7d6; color: #c2540a; }
+}
+
+.emp-cell { display: flex; align-items: center; gap: 10px; }
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;
+}
+.emp-name { font-weight: 500; }
+.emp-dept { font-size: 0.75rem; color: #94a3b8; }
+.done-count { color: #10b981; font-weight: 600; }
+
+.rate-cell { display: flex; align-items: center; gap: 8px; min-width: 120px;
+  mat-progress-bar { flex: 1; }
+  span { font-size: 0.8rem; white-space: nowrap; }
+}
+
+.score-badge {
+  padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 0.85rem;
+}
+
+.band-chip {
+  font-size: 0.65rem !important; height: 20px !important;
+  &.band-excellent { background: #d1fae5 !important; color: #065f46 !important; }
+  &.band-good { background: #dbeafe !important; color: #1e40af !important; }
+  &.band-average { background: #fef3c7 !important; color: #92400e !important; }
+  &.band-needs-improvement { background: #fee2e2 !important; color: #991b1b !important; }
+}
+
+.bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.projects-card, .overdue-tasks-card { border-radius: 16px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important; }
+
+.project-item { padding: 10px 0; border-bottom: 1px solid #f1f5f9; &:last-child { border-bottom: none; } }
+.project-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.project-name { font-weight: 500; font-size: 0.9rem; }
+.project-pct { font-weight: 700; }
+.project-meta { display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; }
+
+.overdue-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; &:last-child { border-bottom: none; } }
+.overdue-info { display: flex; flex-direction: column; }
+.task-name { font-size: 0.9rem; font-weight: 500; }
+.assignee { font-size: 0.75rem; color: #94a3b8; }
+.overdue-text { background: #fef2f2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+
+.warn-icon { color: #f59e0b !important; }
+.due-badge { font-size: 0.7rem; }
+.empty-state { text-align: center; color: #94a3b8; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  mat-icon { color: #10b981; } }

@@ -1,0 +1,218 @@
+<div class="dashboard-container">
+
+  <div class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title"><mat-icon>groups</mat-icon> Team Dashboard</h1>
+      <p class="subtitle" *ngIf="dashboard">{{ dashboard.departmentName || 'All Departments' }}</p>
+    </div>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" routerLink="/tasks/assign">
+        <mat-icon>assignment_ind</mat-icon> Assign Task
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  </div>
+
+  <ng-container *ngIf="!loading && dashboard">
+
+    <!-- Metric Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card blue">
+        <mat-icon>people</mat-icon>
+        <span class="metric-value">{{ dashboard.totalTeamMembers }}</span>
+        <span class="metric-label">Team Members</span>
+      </div>
+      <div class="metric-card green">
+        <mat-icon>task_alt</mat-icon>
+        <span class="metric-value">{{ dashboard.teamTaskSummary.completionRate | number:'1.0-1' }}%</span>
+        <span class="metric-label">Team Completion Rate</span>
+      </div>
+      <div class="metric-card purple">
+        <mat-icon>account_tree</mat-icon>
+        <span class="metric-value">{{ dashboard.activeProjects }}</span>
+        <span class="metric-label">Active Projects</span>
+      </div>
+      <div class="metric-card orange" *ngIf="dashboard.teamTaskSummary.overdue > 0">
+        <mat-icon>warning</mat-icon>
+        <span class="metric-value">{{ dashboard.teamTaskSummary.overdue }}</span>
+        <span class="metric-label">Overdue Tasks</span>
+      </div>
+      <div class="metric-card green" *ngIf="dashboard.teamTaskSummary.overdue === 0">
+        <mat-icon>check_circle</mat-icon>
+        <span class="metric-value">0</span>
+        <span class="metric-label">Overdue Tasks</span>
+      </div>
+      <div class="metric-card red" *ngIf="dashboard.overdueMilestones > 0">
+        <mat-icon>flag</mat-icon>
+        <span class="metric-value">{{ dashboard.overdueMilestones }}</span>
+        <span class="metric-label">Overdue Milestones</span>
+      </div>
+    </div>
+
+    <!-- Task Summary Panel -->
+    <mat-card class="team-summary-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>summarize</mat-icon>
+        <mat-card-title>Team Task Summary</mat-card-title>
+        <mat-card-subtitle>{{ dashboard.teamTaskSummary.total }} total tasks</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="summary-grid">
+          <div class="s-item s-todo"><span>{{ dashboard.teamTaskSummary.toDo }}</span><label>To Do</label></div>
+          <div class="s-item s-progress"><span>{{ dashboard.teamTaskSummary.inProgress }}</span><label>In Progress</label></div>
+          <div class="s-item s-review"><span>{{ dashboard.teamTaskSummary.underReview }}</span><label>In Review</label></div>
+          <div class="s-item s-done"><span>{{ dashboard.teamTaskSummary.completed }}</span><label>Completed</label></div>
+          <div class="s-item s-hold"><span>{{ dashboard.teamTaskSummary.onHold }}</span><label>On Hold</label></div>
+          <div class="s-item s-overdue"><span>{{ dashboard.teamTaskSummary.overdue }}</span><label>Overdue</label></div>
+        </div>
+        <mat-progress-bar mode="determinate" [value]="dashboard.teamTaskSummary.completionRate" color="primary" class="big-bar"></mat-progress-bar>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <mat-card class="chart-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>leaderboard</mat-icon>
+          <mat-card-title>Team Task Completion Rate</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="chart-container h300">
+            <canvas baseChart [data]="teamCompletionData" [type]="teamCompletionType" [options]="teamCompletionOptions"></canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="chart-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>timeline</mat-icon>
+          <mat-card-title>Weekly Team Progress</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="chart-container h300">
+            <canvas baseChart [data]="weeklyChartData" [type]="weeklyChartType" [options]="weeklyChartOptions"></canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Performance Table -->
+    <mat-card class="perf-table-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>emoji_events</mat-icon>
+        <mat-card-title>Team Performance Leaderboard</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="table-scroll">
+          <table mat-table [dataSource]="dashboard.teamPerformance" class="perf-table">
+            <ng-container matColumnDef="rank">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let emp; let i = index">
+                <span class="rank-badge" [class.gold]="i===0" [class.silver]="i===1" [class.bronze]="i===2">{{ i+1 }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="employeeName">
+              <th mat-header-cell *matHeaderCellDef>Employee</th>
+              <td mat-cell *matCellDef="let emp">
+                <div class="emp-cell">
+                  <div class="avatar">{{ emp.employeeName.charAt(0) }}</div>
+                  <div>
+                    <div class="emp-name">{{ emp.employeeName }}</div>
+                    <div class="emp-dept" *ngIf="emp.departmentName">{{ emp.departmentName }}</div>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="totalTasks">
+              <th mat-header-cell *matHeaderCellDef>Tasks</th>
+              <td mat-cell *matCellDef="let emp">{{ emp.totalTasks }}</td>
+            </ng-container>
+            <ng-container matColumnDef="completedTasks">
+              <th mat-header-cell *matHeaderCellDef>Done</th>
+              <td mat-cell *matCellDef="let emp" class="done-count">{{ emp.completedTasks }}</td>
+            </ng-container>
+            <ng-container matColumnDef="taskCompletionRate">
+              <th mat-header-cell *matHeaderCellDef>Completion %</th>
+              <td mat-cell *matCellDef="let emp">
+                <div class="rate-cell">
+                  <mat-progress-bar mode="determinate" [value]="emp.taskCompletionRate" [color]="emp.taskCompletionRate >= 70 ? 'primary' : 'warn'"></mat-progress-bar>
+                  <span>{{ emp.taskCompletionRate | number:'1.0-1' }}%</span>
+                </div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="onTimeCompletionRate">
+              <th mat-header-cell *matHeaderCellDef>On-Time %</th>
+              <td mat-cell *matCellDef="let emp">{{ emp.onTimeCompletionRate | number:'1.0-1' }}%</td>
+            </ng-container>
+            <ng-container matColumnDef="kpiAchievementRate">
+              <th mat-header-cell *matHeaderCellDef>KPI %</th>
+              <td mat-cell *matCellDef="let emp">{{ emp.kpiAchievementRate | number:'1.0-1' }}%</td>
+            </ng-container>
+            <ng-container matColumnDef="overallScore">
+              <th mat-header-cell *matHeaderCellDef>Score</th>
+              <td mat-cell *matCellDef="let emp">
+                <span class="score-badge" [style.background]="getScoreColor(emp.overallScore) + '20'"
+                  [style.color]="getScoreColor(emp.overallScore)">{{ emp.overallScore | number:'1.0-1' }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="performanceBand">
+              <th mat-header-cell *matHeaderCellDef>Band</th>
+              <td mat-cell *matCellDef="let emp">
+                <mat-chip class="band-chip" [class]="getBandClass(emp.performanceBand)">{{ emp.performanceBand }}</mat-chip>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Projects & Milestones -->
+    <div class="bottom-row">
+      <mat-card class="projects-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>account_tree</mat-icon>
+          <mat-card-title>Active Projects</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="project-item" *ngFor="let proj of dashboard.activeProjectsList">
+            <div class="project-header">
+              <span class="project-name">{{ proj.name }}</span>
+              <span class="project-pct" [style.color]="getScoreColor(proj.completionPercentage)">{{ proj.completionPercentage }}%</span>
+            </div>
+            <div class="project-meta">
+              <span>{{ proj.projectManagerName }}</span>
+              <span>Due: {{ formatDate(proj.endDate) }}</span>
+            </div>
+            <mat-progress-bar mode="determinate" [value]="proj.completionPercentage" color="primary"></mat-progress-bar>
+          </div>
+          <p class="empty-state" *ngIf="!dashboard.activeProjectsList?.length">No active projects.</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="overdue-tasks-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="warn-icon">warning</mat-icon>
+          <mat-card-title>Team Overdue Tasks</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="overdue-item" *ngFor="let task of dashboard.teamOverdueTasks">
+            <div class="overdue-info">
+              <span class="task-name">{{ task.title }}</span>
+              <span class="assignee">{{ task.assignedToEmployeeName }}</span>
+            </div>
+            <span class="due-badge overdue-text">{{ getDaysLeft(task.dueDate) }}</span>
+          </div>
+          <p class="empty-state" *ngIf="!dashboard.teamOverdueTasks?.length">
+            <mat-icon>check_circle</mat-icon> No overdue tasks!
+          </p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+  </ng-container>
+</div>

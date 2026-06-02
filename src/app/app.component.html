@@ -1,0 +1,49 @@
+<mat-sidenav-container class="sidenav-container">
+
+  <!-- Sidebar -->
+  <mat-sidenav #drawer [mode]="'side'" [opened]="sidenavOpen" class="sidenav">
+    <div class="sidenav-header">
+      <mat-icon class="brand-icon">speed</mat-icon>
+      <div class="brand-text">
+        <span class="brand-name">Progress</span>
+        <span class="brand-sub">Tracker</span>
+      </div>
+    </div>
+
+    <nav class="nav-list">
+      <div class="nav-group" *ngFor="let group of navGroups">
+        <div class="nav-group-label">{{ group.label }}</div>
+        <a *ngFor="let item of group.items" [routerLink]="item.route" routerLinkActive="active-nav"
+          class="nav-item" mat-ripple>
+          <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      </div>
+    </nav>
+  </mat-sidenav>
+
+  <!-- Main Content -->
+  <mat-sidenav-content class="main-content">
+
+    <!-- Topbar -->
+    <mat-toolbar class="topbar">
+      <button mat-icon-button (click)="sidenavOpen = !sidenavOpen" class="menu-btn">
+        <mat-icon>{{ sidenavOpen ? 'menu_open' : 'menu' }}</mat-icon>
+      </button>
+      <span class="toolbar-spacer"></span>
+
+      <div class="topbar-actions">
+        <button mat-icon-button matTooltip="Notifications">
+          <mat-icon [matBadge]="'3'" matBadgeColor="warn" matBadgeSize="small">notifications</mat-icon>
+        </button>
+        <div class="user-avatar">U</div>
+      </div>
+    </mat-toolbar>
+
+    <!-- Router Outlet -->
+    <div class="content-area">
+      <router-outlet></router-outlet>
+    </div>
+
+  </mat-sidenav-content>
+</mat-sidenav-container>
