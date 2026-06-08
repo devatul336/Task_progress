@@ -14,7 +14,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
+import { AuthService } from '../../shared/auth.service';
 import { TaskItem } from '../../shared/models/interfaces';
 
 interface KanbanColumn { id: number; label: string; icon: string; colorClass: string; tasks: TaskItem[]; }
@@ -26,7 +28,7 @@ interface KanbanColumn { id: number; label: string; icon: string; colorClass: st
     CommonModule, RouterModule, FormsModule, MatCardModule, MatIconModule,
     MatButtonModule, MatChipsModule, MatProgressBarModule, MatBadgeModule,
     MatSelectModule, MatFormFieldModule, MatInputModule, MatTooltipModule,
-    MatMenuModule, MatDialogModule
+    MatMenuModule, MatDialogModule, MatDividerModule
   ],
   templateUrl: './task-board.component.html',
   styleUrls: ['./task-board.component.scss']
@@ -46,7 +48,7 @@ export class TaskBoardComponent implements OnInit {
     { id: 5, label: 'On Hold', icon: 'pause_circle', colorClass: 'col-hold', tasks: [] }
   ];
 
-  constructor(private service: ProgressTrackerService) {}
+  constructor(private service: ProgressTrackerService, private authService: AuthService) {}
 
   ngOnInit(): void {
     this.loadTasks();
@@ -54,8 +56,24 @@ export class TaskBoardComponent implements OnInit {
 
   loadTasks(): void {
     this.loading = true;
+    const isManager = this.authService.isManager();
+    const isAdmin = this.authService.isAdminOrHR();
     const employeeId = localStorage.getItem('employeeId') || undefined;
-    this.service.getTasks({ employeeId }).subscribe({
+    const departmentId = localStorage.getItem('departmentId') || undefined;
+    
+    let filters: any = {};
+    if (isAdmin) {
+      // Admin sees all tasks
+    } else if (isManager) {
+      if (departmentId) {
+        filters.departmentId = departmentId;
+      }
+      // Do not fallback to employeeId for managers, so they see team tasks
+    } else {
+      filters.employeeId = employeeId;
+    }
+
+    this.service.getTasks(filters).subscribe({
       next: (tasks) => {
         this.allTasks = tasks;
         this.distributeTasks(tasks);

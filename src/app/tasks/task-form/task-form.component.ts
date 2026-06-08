@@ -67,13 +67,27 @@ import { TaskItem } from '../../shared/models/interfaces';
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Assign To (Employee ID) *</mat-label>
-            <input matInput formControlName="assignedToEmployeeId">
+            <mat-label>Link to Project</mat-label>
+            <mat-select formControlName="projectId">
+              <mat-option [value]="null">None</mat-option>
+              <mat-option *ngFor="let proj of projects" [value]="proj.projectId">
+                {{ proj.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Assign To (Employee) *</mat-label>
+            <mat-select formControlName="assignedToEmployeeId" (selectionChange)="onEmployeeSelected($event.value)">
+              <mat-option *ngFor="let emp of employees" [value]="emp.employeeId">
+                {{ emp.employeeCode }} - {{ emp.firstName }} {{ emp.lastName }}
+              </mat-option>
+            </mat-select>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Employee Name *</mat-label>
-            <input matInput formControlName="assignedToEmployeeName">
+            <input matInput formControlName="assignedToEmployeeName" readonly>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -140,6 +154,8 @@ export class TaskFormComponent implements OnInit {
   isEdit = false;
   saving = false;
   taskId?: number;
+  employees: any[] = [];
+  projects: any[] = [];
 
   constructor(private fb: FormBuilder, private service: ProgressTrackerService, private router: Router, private route: ActivatedRoute) {
     this.form = this.fb.group({
@@ -157,16 +173,33 @@ export class TaskFormComponent implements OnInit {
       status: [1],
       completionPercentage: [0],
       actualHours: [0],
+      projectId: [null]
     });
   }
 
   ngOnInit(): void {
+    this.service.getEmployees().subscribe(emps => {
+      this.employees = emps;
+    });
+    this.service.getProjects().subscribe(projs => {
+      this.projects = projs;
+    });
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id && id !== 'create') {
       this.isEdit = true;
       this.taskId = Number(id);
       this.service.getTaskById(this.taskId).subscribe(task => {
         this.form.patchValue({ ...task, dueDate: new Date(task.dueDate) });
+      });
+    }
+  }
+
+  onEmployeeSelected(employeeId: string): void {
+    const selectedEmp = this.employees.find(e => e.employeeId === employeeId);
+    if (selectedEmp) {
+      this.form.patchValue({
+        assignedToEmployeeName: `${selectedEmp.firstName} ${selectedEmp.lastName}`.trim()
       });
     }
   }

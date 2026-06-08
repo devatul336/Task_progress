@@ -32,8 +32,8 @@ export class EmployeeDashboardComponent implements OnInit {
 
   // Donut chart: Tasks by Status
   statusChartData: ChartData<'doughnut'> = { labels: [], datasets: [{ data: [], backgroundColor: [] }] };
-  statusChartType: ChartType = 'doughnut';
-  statusChartOptions: ChartConfiguration['options'] = {
+  statusChartType: ChartConfiguration<'doughnut'>['type'] = 'doughnut';
+  statusChartOptions: ChartConfiguration<'doughnut'>['options'] = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw}` } } },
@@ -67,7 +67,7 @@ export class EmployeeDashboardComponent implements OnInit {
   constructor(private service: ProgressTrackerService) {}
 
   ngOnInit(): void {
-    const employeeId = localStorage.getItem('employeeId') || 'EMP001';
+    const employeeId = localStorage.getItem('employeeId') || '2D4C0F4E-6BCB-4F52-B3D4-FD29B9258882';
     this.loadDashboard(employeeId);
   }
 

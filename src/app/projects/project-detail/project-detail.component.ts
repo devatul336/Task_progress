@@ -101,6 +101,19 @@ export class ProjectDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.service.getProjectById(id).subscribe(p => this.project = p);
+    this.service.getEmployees().subscribe((data: any) => {
+      const employees = data.value ? data.value : data;
+      this.service.getProjectById(id).subscribe(p => {
+        if (p && p.teamMembers) {
+          p.teamMembers.forEach(m => {
+            if (m.employeeName === m.employeeId || m.employeeName.length > 30) {
+              const emp = employees.find((e: any) => e.employeeId === m.employeeId);
+              if (emp) m.employeeName = `${emp.firstName} ${emp.lastName}`;
+            }
+          });
+        }
+        this.project = p;
+      });
+    });
   }
 }

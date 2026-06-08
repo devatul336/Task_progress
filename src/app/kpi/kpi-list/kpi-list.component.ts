@@ -13,7 +13,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
+import { AuthService } from '../../shared/auth.service';
 import { KPIDefinition, EmployeeKPI } from '../../shared/models/interfaces';
+import { KpiDefinitionDialogComponent } from '../kpi-definition-dialog/kpi-definition-dialog.component';
+import { AssignKpiDialogComponent } from '../assign-kpi-dialog/assign-kpi-dialog.component';
 
 @Component({
   selector: 'app-kpi-list',
@@ -27,6 +30,10 @@ import { KPIDefinition, EmployeeKPI } from '../../shared/models/interfaces';
 <div class="page-container">
   <div class="page-header">
     <h1><mat-icon>flag</mat-icon> KPI Management</h1>
+    <div class="header-actions" *ngIf="canManage">
+      <button mat-stroked-button color="primary" (click)="openAssignDialog()"><mat-icon>assignment_ind</mat-icon> Assign KPI</button>
+      <button mat-raised-button color="primary" (click)="openDefinitionDialog()"><mat-icon>add</mat-icon> Define KPI</button>
+    </div>
   </div>
   <mat-tab-group>
     <mat-tab label="My KPIs">
@@ -72,7 +79,8 @@ import { KPIDefinition, EmployeeKPI } from '../../shared/models/interfaces';
 </div>`,
   styles: [`
 .page-container { padding: 24px; background: #f8fafc; min-height: 100vh; }
-.page-header { margin-bottom: 24px; h1 { display: flex; align-items: center; gap: 8px; font-size: 1.75rem; font-weight: 700; color: #1e293b; margin: 0; mat-icon { color: #6366f1; } } }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; h1 { display: flex; align-items: center; gap: 8px; font-size: 1.75rem; font-weight: 700; color: #1e293b; margin: 0; mat-icon { color: #6366f1; } } }
+.header-actions { display: flex; gap: 12px; }
 .tab-content { padding: 20px 0; }
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
 .kpi-card { border-radius: 16px !important; }
@@ -89,12 +97,38 @@ export class KpiListComponent implements OnInit {
   definitions: KPIDefinition[] = [];
   employeeKPIs: EmployeeKPI[] = [];
   loading = true;
+  canManage = false;
 
-  constructor(private service: ProgressTrackerService) {}
+  constructor(private service: ProgressTrackerService, private dialog: MatDialog, private authService: AuthService) {}
 
   ngOnInit(): void {
-    const employeeId = localStorage.getItem('employeeId') || 'EMP001';
+    this.canManage = this.authService.isAdminOrHR() || this.authService.isManager();
+    this.loadData();
+  }
+
+  loadData(): void {
+    const employeeId = localStorage.getItem('employeeId') || '2D4C0F4E-6BCB-4F52-B3D4-FD29B9258882';
+    this.loading = true;
     this.service.getKPIDefinitions().subscribe(d => { this.definitions = d; this.loading = false; });
-    this.service.getEmployeeKPIs({ employeeId }).subscribe(k => this.employeeKPIs = k);
+    
+    if (this.canManage) {
+      this.service.getEmployeeKPIs().subscribe(k => this.employeeKPIs = k);
+    } else {
+      this.service.getEmployeeKPIs({ employeeId }).subscribe(k => this.employeeKPIs = k);
+    }
+  }
+
+  openDefinitionDialog() {
+    const dialogRef = this.dialog.open(KpiDefinitionDialogComponent, { width: '500px' });
+    dialogRef.afterClosed().subscribe(res => {
+      if (res) this.loadData();
+    });
+  }
+
+  openAssignDialog() {
+    const dialogRef = this.dialog.open(AssignKpiDialogComponent, { width: '500px' });
+    dialogRef.afterClosed().subscribe(res => {
+      if (res) this.loadData();
+    });
   }
 }

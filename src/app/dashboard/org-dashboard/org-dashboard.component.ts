@@ -58,8 +58,8 @@ export class OrgDashboardComponent implements OnInit {
 
   // Task status doughnut
   statusChartData: ChartData<'doughnut'> = { labels: [], datasets: [{ data: [], backgroundColor: [] }] };
-  statusChartType: ChartType = 'doughnut';
-  statusChartOptions: ChartConfiguration['options'] = {
+  statusChartType: ChartConfiguration<'doughnut'>['type'] = 'doughnut';
+  statusChartOptions: ChartConfiguration<'doughnut'>['options'] = {
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { position: 'bottom' } },
     cutout: '60%'

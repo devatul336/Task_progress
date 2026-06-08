@@ -7,18 +7,20 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 import { TrackerProject } from '../../shared/models/interfaces';
+import { ProjectDialogComponent } from '../project-dialog/project-dialog.component';
 
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatBadgeModule],
+  imports: [CommonModule, RouterModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatBadgeModule, MatDialogModule],
   template: `
 <div class="page-container">
   <div class="page-header">
     <h1><mat-icon>account_tree</mat-icon> Projects</h1>
-    <button mat-raised-button color="primary"><mat-icon>add</mat-icon> New Project</button>
+    <button mat-raised-button color="primary" (click)="openDialog()"><mat-icon>add</mat-icon> New Project</button>
   </div>
   <div class="projects-grid">
     <mat-card class="project-card" *ngFor="let proj of projects" [routerLink]="['/projects', proj.projectId]">
@@ -69,9 +71,26 @@ export class ProjectListComponent implements OnInit {
   projects: TrackerProject[] = [];
   loading = true;
 
-  constructor(private service: ProgressTrackerService) {}
+  constructor(private service: ProgressTrackerService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
+    this.loadProjects();
+  }
+
+  loadProjects(): void {
+    this.loading = true;
     this.service.getProjects().subscribe({ next: (p) => { this.projects = p; this.loading = false; }, error: () => { this.loading = false; } });
+  }
+
+  openDialog(): void {
+    const dialogRef = this.dialog.open(ProjectDialogComponent, {
+      width: '600px'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadProjects();
+      }
+    });
   }
 }

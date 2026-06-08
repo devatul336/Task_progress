@@ -200,4 +200,8 @@ export class ProgressTrackerService {
       params: this.buildParams({ months, departmentId } as Record<string, unknown>)
     });
   }
+
+  getEmployees(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Employee`);
+  }
 }

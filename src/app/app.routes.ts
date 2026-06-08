@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './shared/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard/employee', pathMatch: 'full' },
@@ -8,7 +9,7 @@ export const routes: Routes = [
       { path: 'employee', loadComponent: () => import('./dashboard/employee-dashboard/employee-dashboard.component').then(m => m.EmployeeDashboardComponent) },
       { path: 'employee/:id', loadComponent: () => import('./dashboard/employee-dashboard/employee-dashboard.component').then(m => m.EmployeeDashboardComponent) },
       { path: 'manager', loadComponent: () => import('./dashboard/manager-dashboard/manager-dashboard.component').then(m => m.ManagerDashboardComponent) },
-      { path: 'organization', loadComponent: () => import('./dashboard/org-dashboard/org-dashboard.component').then(m => m.OrgDashboardComponent) },
+      { path: 'organization', loadComponent: () => import('./dashboard/org-dashboard/org-dashboard.component').then(m => m.OrgDashboardComponent), canActivate: [adminGuard] },
     ]
   },
   {
@@ -23,8 +24,8 @@ export const routes: Routes = [
   {
     path: 'projects',
     children: [
-      { path: '', loadComponent: () => import('./projects/project-list/project-list.component').then(m => m.ProjectListComponent) },
-      { path: ':id', loadComponent: () => import('./projects/project-detail/project-detail.component').then(m => m.ProjectDetailComponent) },
+      { path: '', loadComponent: () => import('./projects/project-list/project-list.component').then(m => m.ProjectListComponent), canActivate: [adminGuard] },
+      { path: ':id', loadComponent: () => import('./projects/project-detail/project-detail.component').then(m => m.ProjectDetailComponent), canActivate: [adminGuard] },
     ]
   },
   {

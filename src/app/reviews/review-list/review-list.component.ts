@@ -7,16 +7,20 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
+import { AuthService } from '../../shared/auth.service';
 import { ProgressReview } from '../../shared/models/interfaces';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { ReviewDialogComponent } from '../review-dialog/review-dialog.component';
 
 @Component({
   selector: 'app-review-list',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatTableModule],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatTableModule, MatDialogModule],
   template: `
 <div class="page-container">
   <div class="page-header">
     <h1><mat-icon>star_rate</mat-icon> Performance Reviews</h1>
+    <button mat-raised-button color="primary" *ngIf="canManage" (click)="openDialog()"><mat-icon>add</mat-icon> Add Review</button>
   </div>
   <div class="reviews-list" *ngIf="reviews.length">
     <mat-card class="review-card" *ngFor="let review of reviews">
@@ -52,7 +56,7 @@ import { ProgressReview } from '../../shared/models/interfaces';
 </div>`,
   styles: [`
 .page-container { padding: 24px; background: #f8fafc; min-height: 100vh; }
-.page-header { margin-bottom: 24px; h1 { display: flex; align-items: center; gap: 8px; font-size: 1.75rem; font-weight: 700; color: #1e293b; margin: 0; mat-icon { color: #6366f1; } } }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; h1 { display: flex; align-items: center; gap: 8px; font-size: 1.75rem; font-weight: 700; color: #1e293b; margin: 0; mat-icon { color: #6366f1; } } }
 .reviews-list { display: flex; flex-direction: column; gap: 16px; }
 .review-card { border-radius: 16px !important; }
 .rating-big { display: flex; align-items: center; gap: 10px; margin: 12px 0; .stars { font-size: 1.5rem; color: #f59e0b; } .rating-num { font-size: 1.2rem; font-weight: 700; } }
@@ -72,12 +76,31 @@ import { ProgressReview } from '../../shared/models/interfaces';
 export class ReviewListComponent implements OnInit {
   reviews: ProgressReview[] = [];
   loading = true;
+  canManage = false;
 
-  constructor(private service: ProgressTrackerService) {}
+  constructor(private service: ProgressTrackerService, private dialog: MatDialog, private authService: AuthService) {}
 
   ngOnInit(): void {
-    const employeeId = localStorage.getItem('employeeId') || 'EMP001';
-    this.service.getReviews({ employeeId }).subscribe({ next: (r) => { this.reviews = r; this.loading = false; }, error: () => { this.loading = false; } });
+    this.canManage = this.authService.isAdminOrHR() || this.authService.isManager();
+    this.loadReviews();
+  }
+
+  loadReviews() {
+    const employeeId = localStorage.getItem('employeeId') || '2D4C0F4E-6BCB-4F52-B3D4-FD29B9258882';
+    this.loading = true;
+    
+    if (this.canManage) {
+      this.service.getReviews().subscribe({ next: (r) => { this.reviews = r; this.loading = false; }, error: () => { this.loading = false; } });
+    } else {
+      this.service.getReviews({ employeeId }).subscribe({ next: (r) => { this.reviews = r; this.loading = false; }, error: () => { this.loading = false; } });
+    }
+  }
+
+  openDialog() {
+    const dialogRef = this.dialog.open(ReviewDialogComponent, { width: '600px' });
+    dialogRef.afterClosed().subscribe(res => {
+      if (res) this.loadReviews();
+    });
   }
 
   acknowledge(review: ProgressReview): void {

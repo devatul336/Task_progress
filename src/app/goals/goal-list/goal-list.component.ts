@@ -6,22 +6,27 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
+import { AuthService } from '../../shared/auth.service';
 import { EmployeeGoal } from '../../shared/models/interfaces';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { GoalDialogComponent } from '../goal-dialog/goal-dialog.component';
+import { UpdateGoalDialogComponent } from '../update-goal-dialog/update-goal-dialog.component';
 
 @Component({
   selector: 'app-goal-list',
   standalone: true,
   imports: [CommonModule, FormsModule, MatCardModule, MatIconModule, MatButtonModule,
-    MatProgressBarModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+    MatProgressBarModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatDialogModule],
   template: `
 <div class="page-container">
   <div class="page-header">
     <h1><mat-icon>emoji_events</mat-icon> My Goals</h1>
-    <button mat-raised-button color="primary"><mat-icon>add</mat-icon> Add Goal</button>
+    <button mat-raised-button color="primary" *ngIf="canManage" (click)="openDialog()"><mat-icon>add</mat-icon> Add Goal</button>
   </div>
   <div class="goals-grid" *ngIf="goals.length">
     <mat-card class="goal-card" *ngFor="let goal of goals" [class.achieved]="goal.status === 3" [class.overdue-card]="goal.isOverdue">
@@ -41,9 +46,12 @@ import { EmployeeGoal } from '../../shared/models/interfaces';
         </div>
         <div class="goal-footer">
           <mat-chip [class]="'status-' + goal.status">{{ goal.statusName }}</mat-chip>
-          <span class="due-info" [class.overdue]="goal.isOverdue">
-            {{ goal.achievedDate ? ('Achieved: ' + (goal.achievedDate | date:'dd MMM yyyy')) : ('Due: ' + (goal.targetDate | date:'dd MMM yyyy')) }}
-          </span>
+          <button mat-icon-button color="primary" (click)="openUpdateDialog(goal)" matTooltip="Update Progress">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
+        <div class="due-info" [class.overdue]="goal.isOverdue" style="margin-top: 8px;">
+          {{ goal.achievedDate ? ('Achieved: ' + (goal.achievedDate | date:'dd MMM yyyy')) : ('Due: ' + (goal.targetDate | date:'dd MMM yyyy')) }}
         </div>
         <div class="reviewer-note" *ngIf="goal.reviewerComments">
           <mat-icon>rate_review</mat-icon> {{ goal.reviewerComments }}
@@ -73,11 +81,37 @@ import { EmployeeGoal } from '../../shared/models/interfaces';
 export class GoalListComponent implements OnInit {
   goals: EmployeeGoal[] = [];
   loading = true;
+  canManage = false;
 
-  constructor(private service: ProgressTrackerService) {}
+  constructor(private service: ProgressTrackerService, private dialog: MatDialog, private authService: AuthService) {}
 
   ngOnInit(): void {
-    const employeeId = localStorage.getItem('employeeId') || 'EMP001';
-    this.service.getGoals({ employeeId }).subscribe({ next: (g) => { this.goals = g; this.loading = false; }, error: () => { this.loading = false; } });
+    this.canManage = this.authService.isAdminOrHR() || this.authService.isManager();
+    this.loadGoals();
+  }
+
+  loadGoals() {
+    const employeeId = localStorage.getItem('employeeId') || '2D4C0F4E-6BCB-4F52-B3D4-FD29B9258882';
+    this.loading = true;
+    
+    if (this.canManage) {
+      this.service.getGoals().subscribe({ next: (g) => { this.goals = g; this.loading = false; }, error: () => { this.loading = false; } });
+    } else {
+      this.service.getGoals({ employeeId }).subscribe({ next: (g) => { this.goals = g; this.loading = false; }, error: () => { this.loading = false; } });
+    }
+  }
+
+  openDialog() {
+    const dialogRef = this.dialog.open(GoalDialogComponent, { width: '500px' });
+    dialogRef.afterClosed().subscribe(res => {
+      if (res) this.loadGoals();
+    });
+  }
+
+  openUpdateDialog(goal: EmployeeGoal) {
+    const dialogRef = this.dialog.open(UpdateGoalDialogComponent, { width: '400px', data: { goal } });
+    dialogRef.afterClosed().subscribe(res => {
+      if (res) this.loadGoals();
+    });
   }
 }
