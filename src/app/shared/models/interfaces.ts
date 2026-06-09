@@ -280,6 +280,10 @@ export interface EmployeePerformanceSummary {
   designation?: string;
   totalTasks: number;
   completedTasks: number;
+  toDoTasks: number;
+  inProgressTasks: number;
+  reviewTasks: number;
+  onHoldTasks: number;
   overdueTasks: number;
   taskCompletionRate: number;
   onTimeCompletionRate: number;
@@ -287,6 +291,7 @@ export interface EmployeePerformanceSummary {
   goalAchievementRate: number;
   overallScore: number;
   performanceBand: string;
+  tasks?: any[];
 }
 
 export interface DepartmentPerformance {

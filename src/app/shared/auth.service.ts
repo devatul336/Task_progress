@@ -25,6 +25,19 @@ export class AuthService {
     if (sessionRole && sessionRole.trim() !== '') {
       return sessionRole;
     }
+    
+    // Try to extract from the 'user' object saved by AAA login
+    const userStr = sessionStorage.getItem('user');
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        if (userObj && userObj.employeeRoleLoginDtos && userObj.employeeRoleLoginDtos.length > 0) {
+          const roleName = userObj.employeeRoleLoginDtos[0].roleName;
+          if (roleName) return roleName;
+        }
+      } catch (e) {}
+    }
+    
     return this.getUserInfo().role;
   }
 

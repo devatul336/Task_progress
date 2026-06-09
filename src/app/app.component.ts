@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AuthService } from './shared/auth.service';
 
 interface NavItem { label: string; icon: string; route: string; badge?: number; }
@@ -18,7 +19,7 @@ interface NavItem { label: string; icon: string; route: string; badge?: number; 
   imports: [
     CommonModule, RouterOutlet, RouterModule, MatToolbarModule,
     MatSidenavModule, MatListModule, MatIconModule, MatButtonModule,
-    MatBadgeModule, MatTooltipModule
+    MatBadgeModule, MatTooltipModule, MatProgressBarModule
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
@@ -56,6 +57,7 @@ export class AppComponent {
   userRole: string = '';
   userName: string = '';
   userEmail: string = '';
+  isAuthReady: boolean = false;
 
   // Dropdown states
   showUserDropdown = false;
@@ -68,7 +70,7 @@ export class AppComponent {
     designation: ''
   };
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   ngOnInit() {
     // Check URL for token first (if opened in new tab from shell)
@@ -78,7 +80,7 @@ export class AppComponent {
     let nameFromUrl = urlParams.get('userName');
     let emailFromUrl = urlParams.get('userEmail');
     let employeeIdFromUrl = urlParams.get('employeeId');
-    
+
     // Also check hash routing query params (e.g. /#/dashboard/employee?token=...)
     if (!tokenFromUrl && window.location.hash.includes('?')) {
       const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
@@ -103,9 +105,9 @@ export class AppComponent {
       const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
       let newHash = window.location.hash;
       if (newHash.includes('?token=')) {
-         newHash = newHash.split('?')[0]; // simple strip
+        newHash = newHash.split('?')[0]; // simple strip
       } else if (newHash.includes('?')) {
-         newHash = newHash.split('?')[0]; // strip other params if added
+        newHash = newHash.split('?')[0]; // strip other params if added
       }
       window.history.replaceState({}, document.title, newUrl + newHash);
     }
@@ -121,13 +123,33 @@ export class AppComponent {
           const tokenStr = typeof token === 'string' ? token : JSON.stringify(token);
           sessionStorage.setItem('token', tokenStr);
           localStorage.setItem('token', tokenStr);
-          
+
+          if (user) {
+            const userStr = typeof user === 'string' ? user : JSON.stringify(user);
+            sessionStorage.setItem('user', userStr);
+            try {
+              const parsedUser = JSON.parse(userStr);
+              if (parsedUser.employeId) {
+                localStorage.setItem('employeeId', parsedUser.employeId);
+              } else if (parsedUser.EmployeeId) {
+                localStorage.setItem('employeeId', parsedUser.EmployeeId);
+              }
+            } catch (e) { }
+          }
+
           // Re-init auth info after receiving token
           const userInfo = this.authService.getUserInfo();
-          this.userRole = userInfo.role;
+          this.userRole = this.authService.getUserRole();
           this.userName = userInfo.name;
           this.userEmail = userInfo.email;
           this.filterNavItems();
+
+          // Also update userDetails which is used in the UI dropdown
+          this.userDetails.name = this.userName;
+          this.userDetails.email = this.userEmail;
+          this.userDetails.role = this.userRole;
+
+          this.isAuthReady = true;
         }
       }
     });
@@ -138,10 +160,10 @@ export class AppComponent {
     }
 
     const userInfo = this.authService.getUserInfo();
-    this.userRole = sessionStorage.getItem('userRole') || userInfo.role;
+    this.userRole = this.authService.getUserRole();
     this.userName = sessionStorage.getItem('userName') || userInfo.name;
     this.userEmail = sessionStorage.getItem('userEmail') || userInfo.email;
-    
+
     this.userDetails = {
       name: this.userName,
       email: this.userEmail,
@@ -149,8 +171,12 @@ export class AppComponent {
       department: '',
       designation: ''
     };
-    
+
     this.filterNavItems();
+
+    if (this.authService.getToken()) {
+      this.isAuthReady = true;
+    }
   }
 
   get userInitials(): string {
@@ -188,9 +214,10 @@ export class AppComponent {
   }
 
   filterNavItems() {
-    const isAdmin = this.authService.isAdminOrHR();
-    const isManager = this.authService.isManager();
-    
+    const role = sessionStorage.getItem('userRole') || localStorage.getItem('userRole') || '';
+    const isAdmin = role === 'Admin' || role === 'HR' || this.authService.isAdminOrHR();
+    const isManager = role === 'Manager' || this.authService.isManager();
+
     this.filteredNavGroups = this.navGroups.map(group => {
       // Filter out items based on user role
       const filteredItems = group.items.filter(item => {
@@ -200,13 +227,13 @@ export class AppComponent {
 
         // List of routes restricted to ONLY Admin/HR
         const adminRoutes = [
-          '/dashboard/organization',
-          '/projects'
+          '/dashboard/organization'
         ];
 
         // List of routes restricted to Manager AND Admin/HR
         const managerRoutes = [
-          '/dashboard/manager'
+          '/dashboard/manager',
+          '/projects'
         ];
 
         if (adminRoutes.includes(item.route)) {
@@ -219,7 +246,7 @@ export class AppComponent {
 
         return true; // Show for everyone else
       });
-      
+
       return {
         ...group,
         items: filteredItems

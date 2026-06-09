@@ -6,7 +6,10 @@ export const adminGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isAdminOrHR()) {
+  const role = sessionStorage.getItem('userRole') || localStorage.getItem('userRole') || '';
+
+  console.log('Guard role check:', role);
+  if (authService.isAdminOrHR() || authService.isManager() || role === 'Manager') {
     return true;
   }
 

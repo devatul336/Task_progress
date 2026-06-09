@@ -65,9 +65,11 @@ export class TaskBoardComponent implements OnInit {
     if (isAdmin) {
       // Admin sees all tasks
     } else if (isManager) {
-      if (departmentId) {
-        filters.departmentId = departmentId;
-      }
+      // We don't filter by departmentId for managers to ensure we see all team tasks
+      // even if the task's DepartmentId is corrupted or null.
+      // if (departmentId) {
+      //   filters.departmentId = departmentId;
+      // }
       // Do not fallback to employeeId for managers, so they see team tasks
     } else {
       filters.employeeId = employeeId;
