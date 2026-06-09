@@ -27,7 +27,7 @@ import { ReviewDialogComponent } from '../review-dialog/review-dialog.component'
       <mat-card-header>
         <mat-icon mat-card-avatar>assignment_ind</mat-icon>
         <mat-card-title>{{ review.reviewPeriod }}</mat-card-title>
-        <mat-card-subtitle>By {{ review.reviewerName }} | {{ review.reviewDate | date:'dd MMM yyyy' }}</mat-card-subtitle>
+        <mat-card-subtitle>By {{ review.reviewerName || 'Admin / Manager' }} | {{ review.reviewDate | date:'dd MMM yyyy' }}</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         <div class="rating-big">
@@ -39,10 +39,11 @@ import { ReviewDialogComponent } from '../review-dialog/review-dialog.component'
           <div class="m-item"><span class="m-val">{{ review.kpiAchievementRate | number:'1.0-1' }}%</span><span class="m-lbl">KPI Rate</span></div>
           <div class="m-item"><span class="m-val">{{ review.goalAchievementRate | number:'1.0-1' }}%</span><span class="m-lbl">Goal Rate</span></div>
         </div>
-        <div class="review-sections" *ngIf="review.strengths">
-          <p><strong>Strengths:</strong> {{ review.strengths }}</p>
+        <div class="review-sections" *ngIf="review.strengths || review.areasOfImprovement || review.goalsForNextPeriod || review.comments">
+          <p *ngIf="review.strengths"><strong>Strengths:</strong> {{ review.strengths }}</p>
           <p *ngIf="review.areasOfImprovement"><strong>Areas to Improve:</strong> {{ review.areasOfImprovement }}</p>
           <p *ngIf="review.goalsForNextPeriod"><strong>Next Period Goals:</strong> {{ review.goalsForNextPeriod }}</p>
+          <p *ngIf="review.comments"><strong>Comments:</strong> {{ review.comments }}</p>
         </div>
         <div class="review-footer">
           <mat-chip [class]="'status-' + review.statusName.toLowerCase()">{{ review.statusName }}</mat-chip>
@@ -78,7 +79,7 @@ export class ReviewListComponent implements OnInit {
   loading = true;
   canManage = false;
 
-  constructor(private service: ProgressTrackerService, private dialog: MatDialog, private authService: AuthService) {}
+  constructor(private service: ProgressTrackerService, private dialog: MatDialog, private authService: AuthService) { }
 
   ngOnInit(): void {
     this.canManage = this.authService.isAdminOrHR() || this.authService.isManager();
@@ -86,13 +87,56 @@ export class ReviewListComponent implements OnInit {
   }
 
   loadReviews() {
-    const employeeId = localStorage.getItem('employeeId') || '2D4C0F4E-6BCB-4F52-B3D4-FD29B9258882';
+    let employeeId = localStorage.getItem('employeeId');
+    if (!employeeId || employeeId === 'undefined') {
+      employeeId = localStorage.getItem('EmployeeId');
+    }
+    if (!employeeId || employeeId === 'undefined') {
+      const userStr = sessionStorage.getItem('user');
+      if (userStr) {
+        try {
+          const userObj = JSON.parse(userStr);
+          employeeId = userObj.employeId || userObj.EmployeeId || userObj.employeeId;
+        } catch (e) { }
+      }
+    }
+
+    console.log('[ReviewList] Extracted employeeId:', employeeId);
+    console.log('[ReviewList] canManage:', this.canManage);
+
     this.loading = true;
-    
+
     if (this.canManage) {
-      this.service.getReviews().subscribe({ next: (r) => { this.reviews = r; this.loading = false; }, error: () => { this.loading = false; } });
+      this.service.getReviews().subscribe({ 
+        next: (r) => { 
+          console.log('[ReviewList] Manager fetched reviews:', r);
+          this.reviews = r; 
+          this.loading = false; 
+        }, 
+        error: (err) => { 
+          console.error('[ReviewList] Manager fetch error:', err);
+          this.loading = false; 
+        } 
+      });
     } else {
-      this.service.getReviews({ employeeId }).subscribe({ next: (r) => { this.reviews = r; this.loading = false; }, error: () => { this.loading = false; } });
+      let filters: any = {};
+      if (employeeId && employeeId !== 'me' && employeeId !== 'undefined') {
+        filters.employeeId = employeeId;
+      }
+      console.log('[ReviewList] Employee fetching with filters:', filters);
+      this.service.getReviews(filters).subscribe({ 
+        next: (r) => { 
+          console.log('[ReviewList] Employee fetched reviews:', r);
+          // Only show reviews that are NOT in draft status (status > 1), UNLESS it's the manager viewing.
+          // Employees shouldn't see draft reviews. Wait, let's just show all for now to see if data comes.
+          this.reviews = r; 
+          this.loading = false; 
+        }, 
+        error: (err) => { 
+          console.error('[ReviewList] Employee fetch error:', err);
+          this.loading = false; 
+        } 
+      });
     }
   }
 

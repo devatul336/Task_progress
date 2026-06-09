@@ -76,7 +76,7 @@ export class EmployeeDashboardComponent implements OnInit {
         if (userStr) {
             try {
                 const userObj = JSON.parse(userStr);
-                employeeId = userObj.employeId || userObj.EmployeeId;
+                employeeId = userObj.employeId || userObj.EmployeeId || userObj.employeeId;
             } catch(e) {}
         }
     }

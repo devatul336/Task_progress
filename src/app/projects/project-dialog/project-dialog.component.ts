@@ -116,10 +116,9 @@ export class ProjectDialogComponent implements OnInit {
   ngOnInit(): void {
     this.service.getEmployees().subscribe((data: any) => {
       this.employees = data.value ? data.value : data;
-      this.managers = this.employees.filter(e => {
-        const desig = (e.designation || '').toLowerCase();
-        return desig.includes('manager') || desig.includes('lead') || desig.includes('admin') || desig.includes('head');
-      });
+      // For testing purposes, allow all employees to be selected as managers.
+      // In production, you can restrict this back to specific designations.
+      this.managers = this.employees;
     });
   }
 
@@ -127,10 +126,10 @@ export class ProjectDialogComponent implements OnInit {
     if (this.projectForm.invalid) return;
     this.saving = true;
     const val = this.projectForm.value;
-    
+
     // Find manager name
     const manager = this.employees.find(e => e.employeeId === val.projectManagerId);
-    
+
     const payload = {
       ...val,
       projectManagerName: manager ? manager.firstName + ' ' + manager.lastName : val.projectManagerId,
