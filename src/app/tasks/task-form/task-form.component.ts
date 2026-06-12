@@ -28,7 +28,7 @@ import { TaskItem } from '../../shared/models/interfaces';
 <div class="form-container">
   <div class="form-header">
     <button mat-icon-button routerLink="/tasks"><mat-icon>arrow_back</mat-icon></button>
-    <h1>{{ isEdit ? 'Edit Task' : 'Create Task' }}</h1>
+    <h1>{{ isEdit ? 'Task Details' : 'Create Task' }}</h1>
   </div>
 
   <mat-card class="form-card">
@@ -131,7 +131,7 @@ import { TaskItem } from '../../shared/models/interfaces';
 
         <div class="form-actions">
           <button mat-button type="button" routerLink="/tasks">Cancel</button>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || saving">
+          <button mat-raised-button color="primary" type="submit" [disabled]="saving">
             {{ saving ? 'Saving...' : (isEdit ? 'Update Task' : 'Create Task') }}
           </button>
         </div>
@@ -189,8 +189,19 @@ export class TaskFormComponent implements OnInit {
     if (id && id !== 'create') {
       this.isEdit = true;
       this.taskId = Number(id);
-      this.service.getTaskById(this.taskId).subscribe(task => {
-        this.form.patchValue({ ...task, dueDate: new Date(task.dueDate) });
+      this.service.getTaskById(this.taskId).subscribe({
+        next: (task) => {
+          console.log('Task fetched successfully:', task);
+          const patchData: any = { ...task };
+          if (task.dueDate) {
+            patchData.dueDate = new Date(task.dueDate);
+          }
+          this.form.patchValue(patchData);
+        },
+        error: (err) => {
+          console.error('Error fetching task details:', err);
+          alert('Failed to load task details. See console for error.');
+        }
       });
     }
   }
@@ -205,7 +216,10 @@ export class TaskFormComponent implements OnInit {
   }
 
   save(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
     this.saving = true;
     const val = this.form.value;
     if (this.isEdit) {

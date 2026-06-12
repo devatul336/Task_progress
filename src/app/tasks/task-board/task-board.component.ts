@@ -79,7 +79,15 @@ export class TaskBoardComponent implements OnInit {
         this.distributeTasks(tasks);
         this.loading = false;
       },
-      error: () => { this.loading = false; }
+      error: (err) => { 
+        this.loading = false; 
+        console.error('Error fetching tasks:', err);
+        if (err.status === 401) {
+          alert('You are not logged in or your session expired. Please log in first.');
+        } else {
+          alert('Failed to load tasks. Check the console for errors.');
+        }
+      }
     });
   }
 
