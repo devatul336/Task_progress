@@ -71,8 +71,11 @@
                   <mat-icon>pause_circle</mat-icon> Put On Hold
                 </button>
                 <mat-divider></mat-divider>
-                <button mat-menu-item [routerLink]="['/tasks', task.taskItemId]">
+                <button mat-menu-item [routerLink]="['/tasks', task.taskItemId]" [queryParams]="{mode: 'view'}">
                   <mat-icon>open_in_new</mat-icon> View Details
+                </button>
+                <button mat-menu-item *ngIf="canEditTask" [routerLink]="['/tasks', task.taskItemId]" [queryParams]="{mode: 'edit'}">
+                  <mat-icon>edit</mat-icon> Edit
                 </button>
               </mat-menu>
             </div>

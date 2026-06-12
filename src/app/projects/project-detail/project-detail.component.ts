@@ -8,13 +8,15 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 import { TrackerProject, Milestone } from '../../shared/models/interfaces';
+import { MilestoneDialogComponent } from '../milestone-dialog/milestone-dialog.component';
 
 @Component({
   selector: 'app-project-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatTabsModule, MatTableModule],
+  imports: [CommonModule, RouterModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatTabsModule, MatTableModule, MatDialogModule],
   template: `
 <div class="page-container" *ngIf="project">
   <div class="proj-hero">
@@ -38,6 +40,9 @@ import { TrackerProject, Milestone } from '../../shared/models/interfaces';
   <mat-tab-group>
     <mat-tab label="Milestones">
       <div class="tab-pad">
+        <div class="milestones-actions" style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+          <button mat-raised-button color="primary" (click)="openMilestoneDialog()">+ Add Milestone</button>
+        </div>
         <div class="milestones-list">
           <div class="milestone-item" *ngFor="let m of project.milestones" [class.achieved]="m.status === 3" [class.overdue]="m.isOverdue">
             <div class="ms-icon"><mat-icon>{{ m.status === 3 ? 'check_circle' : 'flag' }}</mat-icon></div>
@@ -73,7 +78,7 @@ import { TrackerProject, Milestone } from '../../shared/models/interfaces';
 }
 .hero-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; span { font-size: 0.85rem; color: #64748b; } }
 .hero-score { min-width: 200px; text-align: center; }
-.big-pct { font-size: 3rem; font-weight: 700; color: #6366f1; }
+.big-pct { font-size: 3rem; font-weight: 700; color: #6366f1; line-height: 1; margin-bottom: 8px; }
 .task-count { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
 .tab-pad { padding: 20px 0; }
 .milestones-list { display: flex; flex-direction: column; gap: 12px; }
@@ -97,9 +102,17 @@ import { TrackerProject, Milestone } from '../../shared/models/interfaces';
 export class ProjectDetailComponent implements OnInit {
   project: TrackerProject | null = null;
 
-  constructor(private service: ProgressTrackerService, private route: ActivatedRoute) {}
+  constructor(
+    private service: ProgressTrackerService,
+    private route: ActivatedRoute,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
+    this.loadProject();
+  }
+
+  loadProject(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.service.getEmployees().subscribe((data: any) => {
       const employees = data.value ? data.value : data;
@@ -114,6 +127,25 @@ export class ProjectDetailComponent implements OnInit {
         }
         this.project = p;
       });
+    });
+  }
+
+  openMilestoneDialog(): void {
+    if (!this.project) return;
+    const dialogRef = this.dialog.open(MilestoneDialogComponent, {
+      width: '500px',
+      data: { projectId: this.project.projectId }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.service.createMilestone(this.project!.projectId, result).subscribe({
+          next: () => {
+            this.loadProject(); // Reload project to show new milestone
+          },
+          error: (err) => console.error('Failed to create milestone', err)
+        });
+      }
     });
   }
 }

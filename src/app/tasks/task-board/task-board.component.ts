@@ -50,7 +50,10 @@ export class TaskBoardComponent implements OnInit {
 
   constructor(private service: ProgressTrackerService, private authService: AuthService) {}
 
+  canEditTask = false;
+
   ngOnInit(): void {
+    this.canEditTask = this.authService.isAdminOrHR() || this.authService.isManager();
     this.loadTasks();
   }
 

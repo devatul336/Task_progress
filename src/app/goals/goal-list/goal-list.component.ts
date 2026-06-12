@@ -76,6 +76,7 @@ import { UpdateGoalDialogComponent } from '../update-goal-dialog/update-goal-dia
 .icon-achieved { color: #10b981 !important; } .icon-overdue { color: #ef4444 !important; }
 .status-3 { background: #d1fae5 !important; color: #065f46 !important; }
 .empty { text-align: center; color: #94a3b8; padding: 48px; }
+.assigned-emps { margin-top: 8px; }
   `]
 })
 export class GoalListComponent implements OnInit {
@@ -83,7 +84,7 @@ export class GoalListComponent implements OnInit {
   loading = true;
   canManage = false;
 
-  constructor(private service: ProgressTrackerService, private dialog: MatDialog, private authService: AuthService) {}
+  constructor(private service: ProgressTrackerService, private dialog: MatDialog, private authService: AuthService) { }
 
   ngOnInit(): void {
     this.canManage = this.authService.isAdminOrHR() || this.authService.isManager();
@@ -93,7 +94,7 @@ export class GoalListComponent implements OnInit {
   loadGoals() {
     const employeeId = localStorage.getItem('employeeId') || '2D4C0F4E-6BCB-4F52-B3D4-FD29B9258882';
     this.loading = true;
-    
+
     if (this.canManage) {
       this.service.getGoals().subscribe({ next: (g) => { this.goals = g; this.loading = false; }, error: () => { this.loading = false; } });
     } else {

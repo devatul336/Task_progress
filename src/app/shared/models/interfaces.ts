@@ -190,6 +190,11 @@ export interface EmployeeGoal {
   successCriteria?: string;
   isOverdue: boolean;
   createdDate: string;
+  // Assignment fields
+  assignedToEmployeeIds?: string[];
+  assignedToEmployeeNames?: string[];
+  assignedByEmployeeId?: string;
+  assignedByEmployeeName?: string;
 }
 
 export interface ProgressReview {

@@ -27,6 +27,15 @@ import { ProgressTrackerService } from '../../shared/progress-tracker.service';
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Assign To (Employees)</mat-label>
+          <mat-select formControlName="assignedToEmployeeIds" multiple>
+            <mat-option *ngFor="let emp of employees" [value]="emp.employeeId">
+              {{ emp.firstName }} {{ emp.lastName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>Description</mat-label>
           <textarea matInput formControlName="description" rows="2"></textarea>
         </mat-form-field>
@@ -66,6 +75,7 @@ import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 export class GoalDialogComponent implements OnInit {
   goalForm: FormGroup;
   saving = false;
+  employees: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -77,23 +87,35 @@ export class GoalDialogComponent implements OnInit {
       description: [''],
       category: ['', Validators.required],
       targetDate: [new Date(), Validators.required],
-      successCriteria: ['']
+      successCriteria: [''],
+      assignedToEmployeeIds: [[], Validators.required]
     });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.service.getEmployees().subscribe((data: any) => {
+      this.employees = data.value ? data.value : data;
+    });
+  }
 
   save() {
     if (this.goalForm.invalid) return;
     this.saving = true;
-    
-    // Using hardcoded employeeId to match the lists for now
+
     const employeeId = localStorage.getItem('employeeId') || '2D4C0F4E-6BCB-4F52-B3D4-FD29B9258882';
+    const selectedIds = this.goalForm.value.assignedToEmployeeIds;
+    const selectedNames = this.employees
+      .filter((e: any) => selectedIds.includes(e.employeeId))
+      .map((e: any) => `${e.firstName} ${e.lastName}`);
 
     const payload = {
       ...this.goalForm.value,
       employeeId: employeeId,
-      employeeName: 'Current User' // or fetch real name
+      employeeName: 'Current User',
+      assignedToEmployeeIds: selectedIds,
+      assignedToEmployeeNames: selectedNames,
+      assignedByEmployeeId: employeeId,
+      assignedByEmployeeName: 'Current User'
     };
 
     this.service.createGoal(payload).subscribe({
