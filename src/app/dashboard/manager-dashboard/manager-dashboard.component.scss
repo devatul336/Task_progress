@@ -119,3 +119,77 @@
 .due-badge { font-size: 0.7rem; }
 .empty-state { text-align: center; color: #94a3b8; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 6px;
   mat-icon { color: #10b981; } }
+
+/* Expandable Row Styles */
+.element-row { cursor: pointer; transition: background 0.2s; }
+.element-row:hover { background: #f8fafc; }
+.element-row.expanded-row { background: #f1f5f9; border-bottom-color: transparent; }
+.detail-row { height: 0; }
+.element-detail { overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fafafa; border-bottom: 1px solid #e2e8f0; }
+
+.employee-tasks-panel {
+  padding: 16px 24px;
+  width: 100%;
+  background: white;
+  
+  .loading-tasks, .no-tasks {
+    text-align: center;
+    color: #64748b;
+    padding: 16px;
+    font-style: italic;
+  }
+
+  .mini-task-table {
+    width: 100%;
+    border-collapse: collapse;
+    
+    th {
+      text-align: left;
+      padding: 8px;
+      color: #64748b;
+      font-size: 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    td {
+      padding: 10px 8px;
+      font-size: 0.85rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .task-title {
+      font-weight: 500;
+      color: #1e293b;
+    }
+    .task-date {
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+    
+    .status-chip {
+      font-size: 0.7rem;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      &.status-1 { background: #eff6ff; color: #3b82f6; } // To Do
+      &.status-2 { background: #fef3c7; color: #d97706; } // In Progress
+      &.status-3 { background: #f3e8ff; color: #7c3aed; } // Review
+      &.status-4 { background: #d1fae5; color: #059669; } // Completed
+      &.status-5 { background: #f1f5f9; color: #64748b; } // On Hold
+      &.status-6 { background: #fee2e2; color: #ef4444; } // Cancelled
+    }
+    
+    .priority-chip {
+      font-size: 0.7rem;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      &.priority-1 { background: #dcfce7; color: #166534; }
+      &.priority-2 { background: #fef9c3; color: #854d0e; }
+      &.priority-3 { background: #ffedd5; color: #c2410c; }
+      &.priority-4 { background: #fee2e2; color: #991b1b; }
+    }
+  }
+}

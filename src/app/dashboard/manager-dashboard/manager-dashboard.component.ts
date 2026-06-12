@@ -12,8 +12,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
-import { ManagerDashboard, EmployeePerformanceSummary } from '../../shared/models/interfaces';
+import { ManagerDashboard, EmployeePerformanceSummary, TaskItem } from '../../shared/models/interfaces';
 
 @Component({
   selector: 'app-manager-dashboard',
@@ -24,12 +25,48 @@ import { ManagerDashboard, EmployeePerformanceSummary } from '../../shared/model
     MatTooltipModule, MatBadgeModule, BaseChartDirective
   ],
   templateUrl: './manager-dashboard.component.html',
-  styleUrls: ['./manager-dashboard.component.scss']
+  styleUrls: ['./manager-dashboard.component.scss'],
+  animations: [
+    trigger('detailExpand', [
+      state('collapsed,void', style({ height: '0px', minHeight: '0' })),
+      state('expanded', style({ height: '*' })),
+      transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
+    ]),
+  ],
 })
 export class ManagerDashboardComponent implements OnInit {
   dashboard: ManagerDashboard | null = null;
   loading = true;
+  isLeaderboardExpanded = false;
   displayedColumns = ['rank', 'employeeName', 'totalTasks', 'completedTasks', 'taskCompletionRate', 'onTimeCompletionRate', 'kpiAchievementRate', 'overallScore', 'performanceBand'];
+  expandedElement: EmployeePerformanceSummary | null = null;
+  employeeTasks: { [employeeId: string]: TaskItem[] } = {};
+  loadingTasks: { [employeeId: string]: boolean } = {};
+
+  trackByEmployee(index: number, emp: EmployeePerformanceSummary): string {
+    return emp.employeeId;
+  }
+
+  toggleRow(element: EmployeePerformanceSummary, event: Event) {
+    event.stopPropagation();
+    if (this.expandedElement === element) {
+      this.expandedElement = null;
+    } else {
+      this.expandedElement = element;
+      if (!this.employeeTasks[element.employeeId]) {
+        this.loadingTasks[element.employeeId] = true;
+        this.service.getTasks({ employeeId: element.employeeId }).subscribe({
+          next: (tasks) => {
+            this.employeeTasks[element.employeeId] = tasks;
+            this.loadingTasks[element.employeeId] = false;
+          },
+          error: () => {
+            this.loadingTasks[element.employeeId] = false;
+          }
+        });
+      }
+    }
+  }
 
   // Bar chart: Team completion by employee
   teamCompletionData: ChartData<'bar'> = { labels: [], datasets: [{ label: 'Completion %', data: [], backgroundColor: [] }] };
@@ -55,10 +92,25 @@ export class ManagerDashboardComponent implements OnInit {
     plugins: { legend: { position: 'top' } }
   };
 
-  constructor(private service: ProgressTrackerService) {}
+  constructor(private service: ProgressTrackerService) { }
 
   ngOnInit(): void {
-    const managerId = localStorage.getItem('employeeId') || 'MGR001';
+    let managerId = localStorage.getItem('employeeId');
+    if (!managerId || managerId === 'undefined') {
+      managerId = localStorage.getItem('EmployeeId');
+    }
+    if (!managerId || managerId === 'undefined') {
+      const userStr = sessionStorage.getItem('user');
+      if (userStr) {
+        try {
+          const userObj = JSON.parse(userStr);
+          managerId = userObj.employeId || userObj.EmployeeId;
+        } catch (e) { }
+      }
+    }
+    if (!managerId || managerId === 'undefined') {
+      managerId = 'me';
+    }
     const deptId = localStorage.getItem('departmentId') || undefined;
     this.loadDashboard(managerId, deptId);
   }
@@ -115,5 +167,15 @@ export class ManagerDashboardComponent implements OnInit {
     if (diff < 0) return `${Math.abs(diff)}d overdue`;
     if (diff === 0) return 'Due today';
     return `${diff}d left`;
+  }
+
+  getStatusLabel(status: number): string {
+    const map: any = { 1: 'To Do', 2: 'In Progress', 3: 'Under Review', 4: 'Completed', 5: 'On Hold', 6: 'Cancelled' };
+    return map[status] || 'Unknown';
+  }
+
+  getPriorityLabel(priority: number): string {
+    const map: any = { 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Critical' };
+    return map[priority] || 'Medium';
   }
 }

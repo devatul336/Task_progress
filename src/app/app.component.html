@@ -34,10 +34,11 @@
 
       <div class="topbar-actions" style="display: flex; align-items: center; position: relative;">
         <!-- User Dropdown Menu Toggle -->
-        <button type="button" class="user-profile" (click)="onUserClick($event)" style="background:none;border:none;cursor:pointer;padding:0;margin-left:15px;">
+        <button type="button" class="user-profile" (click)="onUserClick($event)" style="background:none;border:none;cursor:pointer;padding:0;margin-left:15px;display:flex;align-items:center;gap:4px;">
             <div class="avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px;">
                 {{ userInitials }}
             </div>
+            <mat-icon style="color: #666;">arrow_drop_down</mat-icon>
         </button>
 
         <!-- User Dropdown Menu -->
@@ -90,8 +91,11 @@
     </mat-toolbar>
 
     <!-- Router Outlet -->
-    <div class="content-area">
+    <div class="content-area" *ngIf="isAuthReady">
       <router-outlet></router-outlet>
+    </div>
+    <div class="content-area" *ngIf="!isAuthReady" style="display: flex; justify-content: center; align-items: center; height: 100%;">
+      <mat-progress-bar mode="indeterminate" style="width: 200px;"></mat-progress-bar>
     </div>
 
   </mat-sidenav-content>

@@ -62,13 +62,17 @@
       <mat-card-content>
         <div class="summary-grid">
           <div class="s-item s-todo"><span>{{ dashboard.teamTaskSummary.toDo }}</span><label>To Do</label></div>
-          <div class="s-item s-progress"><span>{{ dashboard.teamTaskSummary.inProgress }}</span><label>In Progress</label></div>
-          <div class="s-item s-review"><span>{{ dashboard.teamTaskSummary.underReview }}</span><label>In Review</label></div>
-          <div class="s-item s-done"><span>{{ dashboard.teamTaskSummary.completed }}</span><label>Completed</label></div>
+          <div class="s-item s-progress"><span>{{ dashboard.teamTaskSummary.inProgress }}</span><label>In
+              Progress</label></div>
+          <div class="s-item s-review"><span>{{ dashboard.teamTaskSummary.underReview }}</span><label>In Review</label>
+          </div>
+          <div class="s-item s-done"><span>{{ dashboard.teamTaskSummary.completed }}</span><label>Completed</label>
+          </div>
           <div class="s-item s-hold"><span>{{ dashboard.teamTaskSummary.onHold }}</span><label>On Hold</label></div>
           <div class="s-item s-overdue"><span>{{ dashboard.teamTaskSummary.overdue }}</span><label>Overdue</label></div>
         </div>
-        <mat-progress-bar mode="determinate" [value]="dashboard.teamTaskSummary.completionRate" color="primary" class="big-bar"></mat-progress-bar>
+        <mat-progress-bar mode="determinate" [value]="dashboard.teamTaskSummary.completionRate" color="primary"
+          class="big-bar"></mat-progress-bar>
       </mat-card-content>
     </mat-card>
 
@@ -81,7 +85,8 @@
         </mat-card-header>
         <mat-card-content>
           <div class="chart-container h300">
-            <canvas baseChart [data]="teamCompletionData" [type]="teamCompletionType" [options]="teamCompletionOptions"></canvas>
+            <canvas baseChart [data]="teamCompletionData" [type]="teamCompletionType"
+              [options]="teamCompletionOptions"></canvas>
           </div>
         </mat-card-content>
       </mat-card>
@@ -101,74 +106,138 @@
 
     <!-- Performance Table -->
     <mat-card class="perf-table-card">
-      <mat-card-header>
-        <mat-icon mat-card-avatar>emoji_events</mat-icon>
-        <mat-card-title>Team Performance Leaderboard</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="table-scroll">
-          <table mat-table [dataSource]="dashboard.teamPerformance" class="perf-table">
-            <ng-container matColumnDef="rank">
-              <th mat-header-cell *matHeaderCellDef>#</th>
-              <td mat-cell *matCellDef="let emp; let i = index">
-                <span class="rank-badge" [class.gold]="i===0" [class.silver]="i===1" [class.bronze]="i===2">{{ i+1 }}</span>
-              </td>
-            </ng-container>
-            <ng-container matColumnDef="employeeName">
-              <th mat-header-cell *matHeaderCellDef>Employee</th>
-              <td mat-cell *matCellDef="let emp">
-                <div class="emp-cell">
-                  <div class="avatar">{{ emp.employeeName.charAt(0) }}</div>
-                  <div>
-                    <div class="emp-name">{{ emp.employeeName }}</div>
-                    <div class="emp-dept" *ngIf="emp.departmentName">{{ emp.departmentName }}</div>
+      <div class="leaderboard-header" (click)="isLeaderboardExpanded = !isLeaderboardExpanded"
+        style="cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 16px;">
+        <mat-icon style="color: #f59e0b;">emoji_events</mat-icon>
+        <span style="font-size: 16px; font-weight: 500;">
+          Team Performance Leaderboard ({{ dashboard.teamPerformance.length }} Employees)
+        </span>
+        <span style="flex: 1 1 auto;"></span>
+        <button mat-icon-button (click)="$event.stopPropagation(); isLeaderboardExpanded = !isLeaderboardExpanded">
+          <mat-icon>{{ isLeaderboardExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</mat-icon>
+        </button>
+      </div>
+      <div [@detailExpand]="isLeaderboardExpanded ? 'expanded' : 'collapsed'" style="overflow: hidden;">
+        <mat-card-content>
+          <div class="table-scroll">
+            <table mat-table [dataSource]="dashboard.teamPerformance" class="perf-table" multiTemplateDataRows
+              [trackBy]="trackByEmployee">
+              <ng-container matColumnDef="rank">
+                <th mat-header-cell *matHeaderCellDef>#</th>
+                <td mat-cell *matCellDef="let emp">
+                  <span class="rank-badge" [class.gold]="dashboard.teamPerformance.indexOf(emp) === 0"
+                    [class.silver]="dashboard.teamPerformance.indexOf(emp) === 1"
+                    [class.bronze]="dashboard.teamPerformance.indexOf(emp) === 2">
+                    {{ dashboard.teamPerformance.indexOf(emp) + 1 }}
+                  </span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="employeeName">
+                <th mat-header-cell *matHeaderCellDef>Employee</th>
+                <td mat-cell *matCellDef="let emp">
+                  <div class="emp-cell">
+                    <div class="avatar">{{ emp.employeeName.charAt(0) }}</div>
+                    <div>
+                      <div class="emp-name">{{ emp.employeeName }}</div>
+                      <div class="emp-dept" *ngIf="emp.departmentName">{{ emp.departmentName }}</div>
+                    </div>
                   </div>
-                </div>
-              </td>
-            </ng-container>
-            <ng-container matColumnDef="totalTasks">
-              <th mat-header-cell *matHeaderCellDef>Tasks</th>
-              <td mat-cell *matCellDef="let emp">{{ emp.totalTasks }}</td>
-            </ng-container>
-            <ng-container matColumnDef="completedTasks">
-              <th mat-header-cell *matHeaderCellDef>Done</th>
-              <td mat-cell *matCellDef="let emp" class="done-count">{{ emp.completedTasks }}</td>
-            </ng-container>
-            <ng-container matColumnDef="taskCompletionRate">
-              <th mat-header-cell *matHeaderCellDef>Completion %</th>
-              <td mat-cell *matCellDef="let emp">
-                <div class="rate-cell">
-                  <mat-progress-bar mode="determinate" [value]="emp.taskCompletionRate" [color]="emp.taskCompletionRate >= 70 ? 'primary' : 'warn'"></mat-progress-bar>
-                  <span>{{ emp.taskCompletionRate | number:'1.0-1' }}%</span>
-                </div>
-              </td>
-            </ng-container>
-            <ng-container matColumnDef="onTimeCompletionRate">
-              <th mat-header-cell *matHeaderCellDef>On-Time %</th>
-              <td mat-cell *matCellDef="let emp">{{ emp.onTimeCompletionRate | number:'1.0-1' }}%</td>
-            </ng-container>
-            <ng-container matColumnDef="kpiAchievementRate">
-              <th mat-header-cell *matHeaderCellDef>KPI %</th>
-              <td mat-cell *matCellDef="let emp">{{ emp.kpiAchievementRate | number:'1.0-1' }}%</td>
-            </ng-container>
-            <ng-container matColumnDef="overallScore">
-              <th mat-header-cell *matHeaderCellDef>Score</th>
-              <td mat-cell *matCellDef="let emp">
-                <span class="score-badge" [style.background]="getScoreColor(emp.overallScore) + '20'"
-                  [style.color]="getScoreColor(emp.overallScore)">{{ emp.overallScore | number:'1.0-1' }}</span>
-              </td>
-            </ng-container>
-            <ng-container matColumnDef="performanceBand">
-              <th mat-header-cell *matHeaderCellDef>Band</th>
-              <td mat-cell *matCellDef="let emp">
-                <mat-chip class="band-chip" [class]="getBandClass(emp.performanceBand)">{{ emp.performanceBand }}</mat-chip>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          </table>
-        </div>
-      </mat-card-content>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="totalTasks">
+                <th mat-header-cell *matHeaderCellDef>Tasks</th>
+                <td mat-cell *matCellDef="let emp">{{ emp.totalTasks }}</td>
+              </ng-container>
+              <ng-container matColumnDef="completedTasks">
+                <th mat-header-cell *matHeaderCellDef>Done</th>
+                <td mat-cell *matCellDef="let emp" class="done-count">{{ emp.completedTasks }}</td>
+              </ng-container>
+              <ng-container matColumnDef="taskCompletionRate">
+                <th mat-header-cell *matHeaderCellDef>Completion %</th>
+                <td mat-cell *matCellDef="let emp">
+                  <div class="rate-cell">
+                    <mat-progress-bar mode="determinate" [value]="emp.taskCompletionRate"
+                      [color]="emp.taskCompletionRate >= 70 ? 'primary' : 'warn'"></mat-progress-bar>
+                    <span>{{ emp.taskCompletionRate | number:'1.0-1' }}%</span>
+                  </div>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="onTimeCompletionRate">
+                <th mat-header-cell *matHeaderCellDef>On-Time %</th>
+                <td mat-cell *matCellDef="let emp">{{ emp.onTimeCompletionRate | number:'1.0-1' }}%</td>
+              </ng-container>
+              <ng-container matColumnDef="kpiAchievementRate">
+                <th mat-header-cell *matHeaderCellDef>KPI %</th>
+                <td mat-cell *matCellDef="let emp">{{ emp.kpiAchievementRate | number:'1.0-1' }}%</td>
+              </ng-container>
+              <ng-container matColumnDef="overallScore">
+                <th mat-header-cell *matHeaderCellDef>Score</th>
+                <td mat-cell *matCellDef="let emp">
+                  <span class="score-badge" [style.background]="getScoreColor(emp.overallScore) + '20'"
+                    [style.color]="getScoreColor(emp.overallScore)">{{ emp.overallScore | number:'1.0-1' }}</span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="performanceBand">
+                <th mat-header-cell *matHeaderCellDef>Band</th>
+                <td mat-cell *matCellDef="let emp">
+                  <mat-chip class="band-chip" [class]="getBandClass(emp.performanceBand)">{{ emp.performanceBand
+                    }}</mat-chip>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="expandedDetail">
+                <td mat-cell *matCellDef="let element" [attr.colspan]="displayedColumns.length"
+                  style="padding: 0; border: none;">
+                  <div [@detailExpand]="element === expandedElement ? 'expanded' : 'collapsed'"
+                    style="overflow: hidden;">
+                    <div style="padding: 12px 16px; background: #f8fafc;" *ngIf="element === expandedElement">
+
+                      <div *ngIf="loadingTasks[element.employeeId]">
+                        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                      </div>
+
+                      <ng-container *ngIf="!loadingTasks[element.employeeId]">
+                        <ng-container *ngIf="employeeTasks[element.employeeId]?.length; else noTasks">
+                          <div *ngFor="let task of employeeTasks[element.employeeId]" style="display:flex; justify-content:space-between; align-items:center;
+                       padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size:13px;">
+                            <span style="flex: 2;">{{ task.title }}</span>
+                            <span style="color:#888; flex: 1; text-align:center;">{{ getStatusLabel(task.status)
+                              }}</span>
+                            <span style="color:#888; flex: 1; text-align:right;">{{ getPriorityLabel(task.priority)
+                              }}</span>
+                          </div>
+                        </ng-container>
+                        <ng-template #noTasks>
+                          <p style="color:#888; font-size:13px; margin: 0;">No tasks found.</p>
+                        </ng-template>
+                      </ng-container>
+
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- <ng-container matColumnDef="expand">
+                <th mat-header-cell *matHeaderCellDef aria-label="row actions">&nbsp;</th>
+                <td mat-cell *matCellDef="let element">
+                  <button mat-icon-button aria-label="expand row"
+                    (click)="(expandedElement = expandedElement === element ? null : element); $event.stopPropagation()">
+                    <mat-icon *ngIf="expandedElement !== element">keyboard_arrow_down</mat-icon>
+                    <mat-icon *ngIf="expandedElement === element">keyboard_arrow_up</mat-icon>
+                  </button>
+                </td>
+              </ng-container> -->
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+              <tr mat-row *matRowDef="let element; columns: displayedColumns;" class="element-row"
+                [class.expanded-row]="expandedElement === element" (click)="toggleRow(element, $event)"
+                style="cursor: pointer;">
+              </tr>
+              <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </div>
     </mat-card>
 
     <!-- Projects & Milestones -->
@@ -182,7 +251,8 @@
           <div class="project-item" *ngFor="let proj of dashboard.activeProjectsList">
             <div class="project-header">
               <span class="project-name">{{ proj.name }}</span>
-              <span class="project-pct" [style.color]="getScoreColor(proj.completionPercentage)">{{ proj.completionPercentage }}%</span>
+              <span class="project-pct" [style.color]="getScoreColor(proj.completionPercentage)">{{
+                proj.completionPercentage }}%</span>
             </div>
             <div class="project-meta">
               <span>{{ proj.projectManagerName }}</span>

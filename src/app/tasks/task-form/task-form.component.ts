@@ -228,7 +228,9 @@ export class TaskFormComponent implements OnInit {
         error: () => { this.saving = false; }
       });
     } else {
-      this.service.createTask(val).subscribe({
+      const departmentId = localStorage.getItem('departmentId') || undefined;
+      const payload = { ...val, departmentId };
+      this.service.createTask(payload).subscribe({
         next: () => { this.router.navigate(['/tasks']); },
         error: () => { this.saving = false; }
       });

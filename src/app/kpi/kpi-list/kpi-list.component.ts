@@ -107,14 +107,31 @@ export class KpiListComponent implements OnInit {
   }
 
   loadData(): void {
-    const employeeId = localStorage.getItem('employeeId') || '2D4C0F4E-6BCB-4F52-B3D4-FD29B9258882';
+    let employeeId = localStorage.getItem('employeeId');
+    if (!employeeId || employeeId === 'undefined') {
+      employeeId = localStorage.getItem('EmployeeId');
+    }
+    if (!employeeId || employeeId === 'undefined') {
+      const userStr = sessionStorage.getItem('user');
+      if (userStr) {
+        try {
+          const userObj = JSON.parse(userStr);
+          employeeId = userObj.employeId || userObj.EmployeeId || userObj.employeeId;
+        } catch (e) { }
+      }
+    }
+
     this.loading = true;
     this.service.getKPIDefinitions().subscribe(d => { this.definitions = d; this.loading = false; });
     
     if (this.canManage) {
       this.service.getEmployeeKPIs().subscribe(k => this.employeeKPIs = k);
     } else {
-      this.service.getEmployeeKPIs({ employeeId }).subscribe(k => this.employeeKPIs = k);
+      let filters: any = {};
+      if (employeeId && employeeId !== 'me' && employeeId !== 'undefined') {
+        filters.employeeId = employeeId;
+      }
+      this.service.getEmployeeKPIs(filters).subscribe(k => this.employeeKPIs = k);
     }
   }
 

@@ -67,7 +67,22 @@ export class EmployeeDashboardComponent implements OnInit {
   constructor(private service: ProgressTrackerService) {}
 
   ngOnInit(): void {
-    const employeeId = localStorage.getItem('employeeId') || '2D4C0F4E-6BCB-4F52-B3D4-FD29B9258882';
+    let employeeId = localStorage.getItem('employeeId');
+    if (!employeeId || employeeId === 'undefined') {
+        employeeId = localStorage.getItem('EmployeeId');
+    }
+    if (!employeeId || employeeId === 'undefined') {
+        const userStr = sessionStorage.getItem('user');
+        if (userStr) {
+            try {
+                const userObj = JSON.parse(userStr);
+                employeeId = userObj.employeId || userObj.EmployeeId || userObj.employeeId;
+            } catch(e) {}
+        }
+    }
+    if (!employeeId || employeeId === 'undefined') {
+        employeeId = 'me';
+    }
     this.loadDashboard(employeeId);
   }
 
