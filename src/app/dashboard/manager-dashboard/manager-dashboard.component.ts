@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../shared/auth.service';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -38,10 +39,12 @@ export class ManagerDashboardComponent implements OnInit {
   dashboard: ManagerDashboard | null = null;
   loading = true;
   isLeaderboardExpanded = false;
-  displayedColumns = ['rank', 'employeeName', 'totalTasks', 'completedTasks', 'taskCompletionRate', 'onTimeCompletionRate', 'kpiAchievementRate', 'overallScore', 'performanceBand'];
+  displayedColumns = ['rank', 'employeeName', 'totalTasks', 'completedTasks', 'taskCompletionRate', 'onTimeCompletionRate', 'kpiAchievementRate', 'overallScore', 'performanceBand', 'actions'];
   expandedElement: EmployeePerformanceSummary | null = null;
   employeeTasks: { [employeeId: string]: TaskItem[] } = {};
   loadingTasks: { [employeeId: string]: boolean } = {};
+  canReview = false;
+  ratings: { [employeeId: string]: number } = {};
 
   trackByEmployee(index: number, emp: EmployeePerformanceSummary): string {
     return emp.employeeId;
@@ -68,6 +71,12 @@ export class ManagerDashboardComponent implements OnInit {
     }
   }
 
+  setRating(employeeId: string, rating: number, event: Event) {
+    event.stopPropagation();
+    this.ratings[employeeId] = rating;
+    // In a real app, you would call an API here to save the rating.
+  }
+
   // Bar chart: Team completion by employee
   teamCompletionData: ChartData<'bar'> = { labels: [], datasets: [{ label: 'Completion %', data: [], backgroundColor: [] }] };
   teamCompletionType: ChartType = 'bar';
@@ -92,9 +101,10 @@ export class ManagerDashboardComponent implements OnInit {
     plugins: { legend: { position: 'top' } }
   };
 
-  constructor(private service: ProgressTrackerService) { }
+  constructor(private service: ProgressTrackerService, private authService: AuthService) { }
 
   ngOnInit(): void {
+    this.canReview = this.authService.isAdminOrHR() || this.authService.isManager();
     let managerId = localStorage.getItem('employeeId');
     if (!managerId || managerId === 'undefined') {
       managerId = localStorage.getItem('EmployeeId');

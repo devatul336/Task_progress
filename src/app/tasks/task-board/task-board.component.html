@@ -6,22 +6,37 @@
       <h1 class="board-title"><mat-icon>view_kanban</mat-icon> Task Board</h1>
     </div>
     <div class="header-filters">
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Search tasks</mat-label>
-        <input matInput [(ngModel)]="searchText" placeholder="Task name...">
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>Priority</mat-label>
-        <mat-select [(ngModel)]="filterPriority">
-          <mat-option value="">All</mat-option>
-          <mat-option value="4">Critical</mat-option>
-          <mat-option value="3">High</mat-option>
-          <mat-option value="2">Medium</mat-option>
-          <mat-option value="1">Low</mat-option>
-        </mat-select>
-      </mat-form-field>
-      <button mat-raised-button color="primary" routerLink="/tasks/create">
+      <div class="jira-search-bar">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input type="text" [(ngModel)]="searchText" placeholder="Search tasks...">
+      </div>
+
+      <!-- Jira-style Avatar Filters -->
+      <div class="jira-avatar-filters" *ngIf="uniqueAssignees.length > 0">
+        <div class="avatar-group">
+          <div class="filter-avatar" *ngFor="let assignee of uniqueAssignees" [matTooltip]="assignee.name"
+            [style.background]="assignee.color" [class.selected]="selectedAssigneeIds.has(assignee.id)"
+            (click)="toggleAssigneeFilter(assignee.id)">
+            {{ assignee.initials }}
+          </div>
+        </div>
+        <button mat-raised-button color="primary" class="jira-create-btn" *ngIf="selectedAssigneeIds.size > 0"
+          (click)="clearAssigneeFilters()" style="margin-left: 8px;">Clear filters</button>
+      </div>
+      <mat-divider vertical class="header-divider" *ngIf="uniqueAssignees.length > 0"></mat-divider>
+
+      <div class="jira-select-wrapper">
+        <select class="jira-select" [(ngModel)]="filterPriority">
+          <option value="">Priority: All</option>
+          <option value="4">Critical</option>
+          <option value="3">High</option>
+          <option value="2">Medium</option>
+          <option value="1">Low</option>
+        </select>
+        <mat-icon class="select-arrow">expand_more</mat-icon>
+      </div>
+
+      <button mat-raised-button color="primary" class="jira-create-btn" routerLink="/tasks/create">
         <mat-icon>add</mat-icon> Add Task
       </button>
     </div>
@@ -37,27 +52,30 @@
       <!-- Column Header -->
       <div class="col-header">
         <div class="col-title">
-          <mat-icon>{{ col.icon }}</mat-icon>
           <span>{{ col.label }}</span>
+          <span class="count-badge" *ngIf="col.tasks.length === col.totalCount">{{ col.totalCount }}</span>
+          <span class="count-badge" *ngIf="col.tasks.length !== col.totalCount">{{ col.tasks.length }}/{{ col.totalCount
+            }}</span>
         </div>
-        <mat-chip class="count-badge">{{ col.tasks.length }}</mat-chip>
       </div>
 
       <!-- Task Cards -->
       <div class="cards-list">
         <div class="task-card" *ngFor="let task of col.tasks" [class.overdue-card]="isOverdue(task)">
 
-          <!-- Priority Indicator -->
-          <div class="priority-bar" [class]="getPriorityClass(task.priority)"></div>
-
           <!-- Task Content -->
           <div class="card-body">
             <div class="card-header">
-              <span class="task-title">{{ task.title }}</span>
-              <button mat-icon-button [matMenuTriggerFor]="taskMenu" class="card-menu-btn">
+              <span class="task-title" [routerLink]="['/tasks', task.taskItemId]" [queryParams]="{mode: 'view'}"
+                style="cursor: pointer;">{{ task.title }}</span>
+              <button type="button" mat-icon-button [matMenuTriggerFor]="cardMenu" class="card-menu-btn"
+                (click)="$event.stopPropagation()">
                 <mat-icon>more_vert</mat-icon>
               </button>
-              <mat-menu #taskMenu="matMenu">
+              <mat-menu #cardMenu="matMenu">
+                <button mat-menu-item *ngIf="task.status !== 1" (click)="moveTask(task, 1)">
+                  <mat-icon>list_alt</mat-icon> Move to To Do
+                </button>
                 <button mat-menu-item *ngIf="task.status !== 2" (click)="moveTask(task, 2)">
                   <mat-icon>pending</mat-icon> Move to In Progress
                 </button>
@@ -74,32 +92,26 @@
                 <button mat-menu-item [routerLink]="['/tasks', task.taskItemId]" [queryParams]="{mode: 'view'}">
                   <mat-icon>open_in_new</mat-icon> View Details
                 </button>
-                <button mat-menu-item *ngIf="canEditTask" [routerLink]="['/tasks', task.taskItemId]" [queryParams]="{mode: 'edit'}">
+                <button mat-menu-item *ngIf="canEditTask" [routerLink]="['/tasks', task.taskItemId]"
+                  [queryParams]="{mode: 'edit'}">
                   <mat-icon>edit</mat-icon> Edit
                 </button>
               </mat-menu>
             </div>
 
-            <p class="card-desc" *ngIf="task.description">{{ task.description | slice:0:80 }}{{ task.description.length > 80 ? '...' : '' }}</p>
-
-            <div class="card-tags" *ngIf="task.projectName">
-              <mat-chip class="project-chip">{{ task.projectName }}</mat-chip>
-            </div>
-
-            <mat-progress-bar mode="determinate" [value]="task.completionPercentage" color="primary" class="task-progress"></mat-progress-bar>
-            <span class="progress-text">{{ task.completionPercentage }}%</span>
-
-            <div class="card-footer">
-              <div class="assignee-info">
-                <div class="mini-avatar">{{ task.assignedToEmployeeName.charAt(0) }}</div>
-                <span class="assignee-name">{{ task.assignedToEmployeeName }}</span>
+            <div class="card-footer-jira">
+              <div class="card-type-key" [routerLink]="['/tasks', task.taskItemId]" [queryParams]="{mode: 'view'}"
+                style="cursor: pointer;">
+                <mat-icon class="jira-type-icon" [style.color]="getTaskTypeColor(task.taskType)">
+                  {{ getTaskTypeIcon(task.taskType) }}
+                </mat-icon>
+                <span class="jira-key">TSK-{{ task.taskItemId }}</span>
               </div>
-              <div class="card-meta-right">
-                <mat-chip class="priority-chip-small" [class]="getPriorityClass(task.priority)">{{ getPriorityLabel(task.priority) }}</mat-chip>
-                <span class="due-indicator" [class.overdue-text]="isOverdue(task)">
-                  <mat-icon class="tiny-icon">{{ isOverdue(task) ? 'warning' : 'schedule' }}</mat-icon>
-                  {{ getDaysLeft(task.dueDate) }}
-                </span>
+
+              <div class="mini-avatar" *ngIf="task.assignedToEmployeeName"
+                [style.background]="getAvatarColor(task.assignedToEmployeeId)"
+                [matTooltip]="task.assignedToEmployeeName" title="{{ task.assignedToEmployeeName }}">
+                {{ getInitials(task.assignedToEmployeeName) }}
               </div>
             </div>
           </div>
@@ -113,4 +125,5 @@
 
     </div>
   </div>
+
 </div>

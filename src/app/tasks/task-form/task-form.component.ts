@@ -1,29 +1,22 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatCardModule } from '@angular/material/card';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
-import { TaskItem } from '../../shared/models/interfaces';
 import { AuthService } from '../../shared/auth.service';
+import { AddUpdateFormComponent, FormConfig, FormColumn } from '@fovestta2/web-angular';
+import { FormGroup, FormsModule } from '@angular/forms';
+import { combineLatest } from 'rxjs';
+import { QuillModule } from 'ngx-quill';
 
 @Component({
   selector: 'app-task-form',
   standalone: true,
   imports: [
-    CommonModule, RouterModule, FormsModule, ReactiveFormsModule,
-    MatCardModule, MatIconModule, MatButtonModule, MatFormFieldModule,
-    MatInputModule, MatSelectModule, MatDatepickerModule, MatNativeDateModule,
-    MatCheckboxModule, MatProgressBarModule
+    CommonModule, RouterModule, MatIconModule, MatButtonModule, MatCardModule,
+    AddUpdateFormComponent, FormsModule, QuillModule
   ],
   template: `
 <div class="form-container">
@@ -31,223 +24,229 @@ import { AuthService } from '../../shared/auth.service';
     <button mat-icon-button routerLink="/tasks"><mat-icon>arrow_back</mat-icon></button>
     <h1>{{ isEdit ? 'Task Details' : 'Create Task' }}</h1>
   </div>
+  
+  <div class="form-wrapper" *ngIf="taskFormConfig && !loading">
+    <div class="library-form-section">
+      <lib-add-update-form 
+        #taskForm 
+        [config]="taskFormConfig" 
+        (validationError)="onValidationError()">
+      </lib-add-update-form>
+    </div>
 
-  <mat-card class="form-card">
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="save()">
-        <div class="form-grid">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Task Title</mat-label>
-            <input matInput formControlName="title" placeholder="Enter task title">
-          </mat-form-field>
+    <!-- Custom WYSIWYG Fields styled to look inside the form -->
+    <div class="custom-rich-text-fields">
+      <div class="rich-text-field">
+        <label>Description</label>
+        <quill-editor 
+          [(ngModel)]="descriptionText" 
+          [readOnly]="isViewOnly"
+          [modules]="quillModules" 
+          placeholder="Describe the task...">
+        </quill-editor>
+      </div>
+      <div class="rich-text-field">
+        <label>Acceptance Criteria</label>
+        <quill-editor 
+          [(ngModel)]="acceptanceCriteriaText" 
+          [readOnly]="isViewOnly"
+          [modules]="quillModules" 
+          placeholder="Enter acceptance criteria...">
+        </quill-editor>
+      </div>
+    </div>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Description</mat-label>
-            <textarea matInput formControlName="description" rows="3" placeholder="Describe the task..."></textarea>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Task Type</mat-label>
-            <mat-select formControlName="taskType">
-              <mat-option [value]="1">Daily</mat-option>
-              <mat-option [value]="2">Weekly</mat-option>
-              <mat-option [value]="3">Project</mat-option>
-              <mat-option [value]="4">Milestone</mat-option>
-              <mat-option [value]="5">Training</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Priority</mat-label>
-            <mat-select formControlName="priority">
-              <mat-option [value]="1">Low</mat-option>
-              <mat-option [value]="2">Medium</mat-option>
-              <mat-option [value]="3">High</mat-option>
-              <mat-option [value]="4">Critical</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Link to Project</mat-label>
-            <mat-select formControlName="projectId" (selectionChange)="onProjectSelected($event.value)">
-              <mat-option [value]="null">None</mat-option>
-              <mat-option *ngFor="let proj of projects" [value]="proj.projectId">
-                {{ proj.name }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" *ngIf="form.get('projectId')?.value && milestones.length > 0">
-            <mat-label>Link to Milestone</mat-label>
-            <mat-select formControlName="milestoneId">
-              <mat-option [value]="null">None</mat-option>
-              <mat-option *ngFor="let m of milestones" [value]="m.milestoneId">
-                {{ m.title }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Assign To (Employee)</mat-label>
-            <mat-select formControlName="assignedToEmployeeId" (selectionChange)="onEmployeeSelected($event.value)">
-              <mat-option *ngFor="let emp of employees" [value]="emp.employeeId">
-                {{ emp.employeeCode }} - {{ emp.firstName }} {{ emp.lastName }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Employee Name</mat-label>
-            <input matInput formControlName="assignedToEmployeeName" readonly>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Due Date</mat-label>
-            <input matInput [matDatepicker]="picker" formControlName="dueDate">
-            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-            <mat-datepicker #picker></mat-datepicker>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Estimated Hours</mat-label>
-            <input matInput type="number" formControlName="estimatedHours">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" *ngIf="isEdit">
-            <mat-label>Status</mat-label>
-            <mat-select formControlName="status">
-              <mat-option [value]="1">To Do</mat-option>
-              <mat-option [value]="2">In Progress</mat-option>
-              <mat-option [value]="3">Under Review</mat-option>
-              <mat-option [value]="4">Completed</mat-option>
-              <mat-option [value]="5">On Hold</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" *ngIf="isEdit">
-            <mat-label>Completion %</mat-label>
-            <input matInput type="number" formControlName="completionPercentage" min="0" max="100">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Tags (comma separated)</mat-label>
-            <input matInput formControlName="tags">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Acceptance Criteria</mat-label>
-            <textarea matInput formControlName="acceptanceCriteria" rows="2"></textarea>
-          </mat-form-field>
-        </div>
-
-        <div class="form-actions">
-          <button mat-button type="button" routerLink="/tasks">{{ isViewOnly ? 'Back' : 'Cancel' }}</button>
-          <button mat-raised-button color="primary" type="submit" [disabled]="saving" *ngIf="!isViewOnly">
-            {{ saving ? 'Saving...' : (isEdit ? 'Update Task' : 'Create Task') }}
-          </button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button mat-button type="button" routerLink="/tasks">{{ isViewOnly ? 'Back' : 'Cancel' }}</button>
+      <button mat-raised-button color="primary" type="button" [disabled]="saving" *ngIf="!isViewOnly" (click)="submitCustom()">
+        {{ saving ? 'Saving...' : (isEdit ? 'Update Task' : 'Create Task') }}
+      </button>
+    </div>
+  </div>
 </div>`,
   styles: [`
-.form-container { padding: 24px; background: #f8fafc; min-height: 100vh; }
-.form-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0; } }
-.form-card { border-radius: 16px !important; max-width: 900px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.full-width { grid-column: 1 / -1; }
-.form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
-mat-form-field { width: 100%; }
+.form-container { padding-top:10px !important; padding: 24px; background: #f8fafc; min-height: 100vh; }
+.form-header { display: flex; align-items: center; }
+.form-header h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0; }
+
+.form-wrapper {
+  background: white;
+  border-radius: 12px;
+  border: 0.5px solid #cfcfcf;
+  box-shadow: 0 2px 5px #0000001a;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Strip the internal box styling from the library so it merges perfectly with our wrapper */
+::ng-deep lib-add-update-form .form-content,
+::ng-deep lib-add-update-form .form-container {
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  margin: 0 !important;
+}
+
+/* The library already has its own padding, so we just let it sit flush */
+.library-form-section {
+  padding: 0;
+}
+
+.custom-rich-text-fields {
+  padding: 0 10px 10px 10px; /* Match the library's 10px padding */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px; /* Match the library's 12px gap */
+}
+
+.rich-text-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.rich-text-field quill-editor {
+  display: block;
+  width: 100%;
+}
+
+.rich-text-field ::ng-deep .ql-container {
+  min-height: 150px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 0.5px solid #cfcfcf;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.rich-text-field ::ng-deep .ql-toolbar {
+  border: 0.5px solid #cfcfcf;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  background: #f8fafc;
+}
+
+.rich-text-field ::ng-deep .ql-editor {
+  min-height: 150px;
+}
+
+.form-actions { 
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 12px; 
+  padding: 20px; 
+  border-top: 0.5px solid #cfcfcf; 
+  background: white;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
   `]
 })
 export class TaskFormComponent implements OnInit {
-  form: FormGroup;
+  @ViewChild(AddUpdateFormComponent) formComponent!: AddUpdateFormComponent;
+
+  taskFormConfig!: FormConfig;
   isEdit = false;
-  saving = false;
   taskId?: number;
   employees: any[] = [];
   projects: any[] = [];
   milestones: any[] = [];
   isViewOnly = false;
   canEditTask = false;
+  loading = true;
+  saving = false;
 
-  constructor(private fb: FormBuilder, private service: ProgressTrackerService, private router: Router, private route: ActivatedRoute, private authService: AuthService) {
-    this.form = this.fb.group({
-      title: ['', Validators.required],
-      description: [''],
-      taskType: [1, Validators.required],
-      priority: [2, Validators.required],
-      assignedToEmployeeId: ['', Validators.required],
-      assignedToEmployeeName: ['', Validators.required],
-      dueDate: [null, Validators.required],
-      estimatedHours: [0],
-      tags: [''],
-      acceptanceCriteria: [''],
-      isRecurring: [false],
-      status: [1],
-      completionPercentage: [0],
-      actualHours: [0],
-      projectId: [null],
-      milestoneId: [null]
-    });
-  }
+  descriptionText = '';
+  acceptanceCriteriaText = '';
+
+  quillModules = {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['clean']
+    ]
+  };
+
+  constructor(
+    private service: ProgressTrackerService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
+    this.canEditTask = this.authService.isAdminOrHR() || this.authService.isManager();
+
+    let empsLoaded = false;
+    let projsLoaded = false;
+
     this.service.getEmployees().subscribe(emps => {
       this.employees = emps;
+      empsLoaded = true;
+      this.checkLoadStatus(empsLoaded, projsLoaded);
     });
     this.service.getProjects().subscribe(projs => {
       this.projects = projs;
+      projsLoaded = true;
+      this.checkLoadStatus(empsLoaded, projsLoaded);
     });
+  }
 
-    this.canEditTask = this.authService.isAdminOrHR() || this.authService.isManager();
+  checkLoadStatus(empsLoaded: boolean, projsLoaded: boolean) {
+    if (empsLoaded && projsLoaded) {
+      this.setupRouteAndData();
+    }
+  }
 
-    this.route.queryParamMap.subscribe(qParams => {
+  setupRouteAndData() {
+    combineLatest([
+      this.route.queryParamMap,
+      this.route.paramMap
+    ]).subscribe(([qParams, params]) => {
       const mode = qParams.get('mode');
       if (mode === 'view') {
         this.isViewOnly = true;
-        this.form.disable();
       } else if (mode === 'edit' && !this.canEditTask) {
         this.isViewOnly = true;
-        this.form.disable();
       } else {
         this.isViewOnly = false;
-        this.form.enable();
-        // Re-disable Employee Name as it's readonly
-        this.form.get('assignedToEmployeeName')?.disable();
       }
-    });
 
-    this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id && id !== 'create') {
         this.isEdit = true;
         this.taskId = Number(id);
         this.service.getTaskById(this.taskId).subscribe({
           next: (task) => {
-            console.log('Task fetched successfully:', task);
-            const patchData: any = { ...task };
+            const initialData: any = { ...task };
             if (task.dueDate) {
-              patchData.dueDate = new Date(task.dueDate);
+              initialData.dueDate = task.dueDate.split('T')[0];
             }
             if (task.projectId) {
               this.service.getMilestones(task.projectId).subscribe(m => {
                 this.milestones = m;
-                this.form.patchValue(patchData);
+                this.buildFormConfig(initialData);
+                this.loading = false;
               });
             } else {
-              this.form.patchValue(patchData);
+              this.buildFormConfig(initialData);
+              this.loading = false;
             }
           },
           error: (err) => {
             console.error('Error fetching task details:', err);
-            alert('Failed to load task details. See console for error.');
+            alert('Failed to load task details.');
+            this.loading = false;
           }
         });
       } else {
         this.isEdit = false;
         this.taskId = undefined;
-        this.form.reset({
+        this.buildFormConfig({
           taskType: 1,
           priority: 2,
           estimatedHours: 0,
@@ -256,45 +255,237 @@ export class TaskFormComponent implements OnInit {
           completionPercentage: 0,
           actualHours: 0
         });
+        this.loading = false;
       }
     });
   }
 
-  onProjectSelected(projectId: number | null): void {
-    this.form.patchValue({ milestoneId: null });
+  buildFormConfig(initialData: any) {
+    this.descriptionText = initialData.description || '';
+    this.acceptanceCriteriaText = initialData.acceptanceCriteria || '';
+
+    const fields: FormColumn[] = [
+      {
+        name: 'title',
+        label: 'Task Title',
+        type: 'text',
+        placeholder: 'Enter task title',
+        value: initialData.title,
+        validations: [{ type: 'required', message: 'Title is required' }],
+        disabled: this.isViewOnly,
+        colSpan: 2
+      },
+      {
+        name: 'taskType',
+        label: 'Task Type',
+        type: 'select',
+        options: [
+          { label: 'Bug', value: 1 },
+          { label: 'Epic', value: 2 },
+          { label: 'Story', value: 3 },
+          { label: 'Sub Task', value: 4 },
+          { label: 'Task', value: 5 }
+        ],
+        value: initialData.taskType,
+        validations: [{ type: 'required', message: 'Task type is required' }],
+        disabled: this.isViewOnly
+      },
+      {
+        name: 'priority',
+        label: 'Priority',
+        type: 'select',
+        options: [
+          { label: 'Low', value: 1 },
+          { label: 'Medium', value: 2 },
+          { label: 'High', value: 3 },
+          { label: 'Critical', value: 4 }
+        ],
+        value: initialData.priority,
+        validations: [{ type: 'required', message: 'Priority is required' }],
+        disabled: this.isViewOnly
+      },
+      {
+        name: 'projectId',
+        label: 'Link to Project',
+        type: 'select',
+        options: [
+          { label: 'None', value: null },
+          ...this.projects.map(p => ({ label: p.name, value: p.projectId }))
+        ],
+        value: initialData.projectId,
+        disabled: this.isViewOnly,
+        onChange: (value: any, formGroup: FormGroup) => {
+          this.onProjectSelected(value, formGroup);
+        }
+      },
+      {
+        name: 'milestoneId',
+        label: 'Link to Milestone',
+        type: 'select',
+        options: [
+          { label: 'None', value: null },
+          ...this.milestones.map(m => ({ label: m.name, value: m.milestoneId }))
+        ],
+        value: initialData.milestoneId,
+        disabled: this.isViewOnly,
+        hidden: !initialData.projectId && this.milestones.length === 0
+      },
+      {
+        name: 'assignedToEmployeeId',
+        label: 'Assign To (Employee)',
+        type: 'select',
+        colSpan: 1,
+        options: this.employees.map(e => ({ label: `${e.employeeCode} - ${e.firstName} ${e.lastName}`, value: e.employeeId })),
+        value: initialData.assignedToEmployeeId,
+        validations: [{ type: 'required', message: 'Employee assignment is required' }],
+        disabled: this.isViewOnly,
+        onChange: (value: any, formGroup: FormGroup) => {
+          this.onEmployeeSelected(value, formGroup);
+        }
+      },
+      {
+        name: 'dueDate',
+        label: 'Due Date',
+        type: 'date',
+        value: initialData.dueDate,
+        validations: [{ type: 'required', message: 'Due date is required' }],
+        disabled: this.isViewOnly || this.isEdit
+      },
+      {
+        name: 'estimatedHours',
+        label: 'Estimated Hours',
+        type: 'number',
+        value: initialData.estimatedHours,
+        disabled: this.isViewOnly
+      }
+    ];
+
+    if (this.isEdit) {
+      fields.push(
+        {
+          name: 'status',
+          label: 'Status',
+          type: 'select',
+          options: [
+            { label: 'To Do', value: 1 },
+            { label: 'In Progress', value: 2 },
+            { label: 'Under Review', value: 3 },
+            { label: 'Completed', value: 4 },
+            { label: 'On Hold', value: 5 }
+          ],
+          value: initialData.status,
+          disabled: this.isViewOnly
+        }
+      );
+    }
+
+    fields.push(
+      {
+        name: 'tags',
+        label: 'Tags',
+        type: 'text',
+        value: initialData.tags,
+        disabled: this.isViewOnly,
+        colSpan: 1
+      }
+    );
+
+    this.taskFormConfig = {
+      formTitle: '',
+      maxColsPerRow: 2,
+      sections: [{ fields }],
+      hideSubmit: true,
+      hideCancel: true,
+      onSubmit: (data: any) => this.save(data),
+      onCancel: () => this.router.navigate(['/tasks'])
+    };
+  }
+
+  onProjectSelected(projectId: number | null, formGroup: FormGroup): void {
+    formGroup.patchValue({ milestoneId: null });
     this.milestones = [];
     if (projectId) {
-      this.service.getMilestones(projectId).subscribe(m => this.milestones = m);
+      this.service.getMilestones(projectId).subscribe(m => {
+        this.milestones = m;
+        const newFields = [...this.taskFormConfig.sections[0].fields];
+        const milestoneIndex = newFields.findIndex((f: FormColumn) => f.name === 'milestoneId');
+
+        if (milestoneIndex > -1) {
+          newFields[milestoneIndex] = {
+            ...newFields[milestoneIndex],
+            options: [
+              { label: 'None', value: null },
+              ...this.milestones.map(milestone => ({ label: milestone.name, value: milestone.milestoneId }))
+            ],
+            hidden: false
+          };
+        }
+
+        // Auto-select the first milestone if it exists
+        if (this.milestones.length > 0) {
+          formGroup.patchValue({ milestoneId: this.milestones[0].milestoneId });
+        }
+
+        this.taskFormConfig = {
+          ...this.taskFormConfig,
+          sections: [{ ...this.taskFormConfig.sections[0], fields: newFields }]
+        };
+      });
+    } else {
+      const newFields = [...this.taskFormConfig.sections[0].fields];
+      const milestoneIndex = newFields.findIndex((f: FormColumn) => f.name === 'milestoneId');
+
+      if (milestoneIndex > -1) {
+        newFields[milestoneIndex] = {
+          ...newFields[milestoneIndex],
+          options: [{ label: 'None', value: null }],
+          hidden: true
+        };
+      }
+
+      this.taskFormConfig = {
+        ...this.taskFormConfig,
+        sections: [{ ...this.taskFormConfig.sections[0], fields: newFields }]
+      };
     }
   }
 
-  onEmployeeSelected(employeeId: string): void {
+  onEmployeeSelected(employeeId: string, formGroup: FormGroup): void {
     const selectedEmp = this.employees.find(e => e.employeeId === employeeId);
     if (selectedEmp) {
-      this.form.patchValue({
+      formGroup.patchValue({
         assignedToEmployeeName: `${selectedEmp.firstName} ${selectedEmp.lastName}`.trim()
       });
     }
   }
 
-  save(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      const invalidFields: string[] = [];
-      Object.keys(this.form.controls).forEach(key => {
-        if (this.form.get(key)?.invalid) {
-          invalidFields.push(key);
-        }
-      });
-      console.error('Form is invalid! Invalid fields:', invalidFields);
-      alert('Form is invalid. Please check the following fields: ' + invalidFields.join(', '));
-      return;
-    }
+  onValidationError() {
+    this.saving = false;
+  }
+
+  submitCustom() {
     this.saving = true;
-    const val = this.form.value;
+    this.formComponent.handleSubmit();
+  }
+
+  save(val: any): void {
+    val.isRecurring = val.isRecurring || false;
+    val.actualHours = val.actualHours || 0;
+
+    const selectedEmp = this.employees.find(e => e.employeeId === val.assignedToEmployeeId);
+    if (selectedEmp) {
+      val.assignedToEmployeeName = `${selectedEmp.firstName} ${selectedEmp.lastName}`.trim();
+    }
+
+    val.description = this.descriptionText;
+    val.acceptanceCriteria = this.acceptanceCriteriaText;
+
     if (this.isEdit) {
       this.service.updateTask({ ...val, taskItemId: this.taskId! }).subscribe({
-        next: () => { this.router.navigate(['/tasks']); },
+        next: () => {
+          this.saving = false;
+          this.router.navigate(['/tasks']);
+        },
         error: (err) => {
           console.error('Update Task failed:', err);
           this.saving = false;
@@ -304,7 +495,10 @@ export class TaskFormComponent implements OnInit {
       const departmentId = localStorage.getItem('departmentId') || undefined;
       const payload = { ...val, departmentId };
       this.service.createTask(payload).subscribe({
-        next: () => { this.router.navigate(['/tasks']); },
+        next: () => {
+          this.saving = false;
+          this.router.navigate(['/tasks']);
+        },
         error: (err) => {
           console.error('Create Task failed:', err);
           this.saving = false;

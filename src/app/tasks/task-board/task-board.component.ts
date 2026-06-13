@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -20,6 +21,7 @@ import { AuthService } from '../../shared/auth.service';
 import { TaskItem } from '../../shared/models/interfaces';
 
 interface KanbanColumn { id: number; label: string; icon: string; colorClass: string; tasks: TaskItem[]; }
+interface Assignee { id: string; name: string; initials: string; color: string; }
 
 @Component({
   selector: 'app-task-board',
@@ -39,6 +41,9 @@ export class TaskBoardComponent implements OnInit {
   searchText = '';
   filterPriority = '';
   filterEmployee = '';
+  
+  uniqueAssignees: Assignee[] = [];
+  selectedAssigneeIds: Set<string> = new Set();
 
   columns: KanbanColumn[] = [
     { id: 1, label: 'To Do', icon: 'radio_button_unchecked', colorClass: 'col-todo', tasks: [] },
@@ -69,19 +74,30 @@ export class TaskBoardComponent implements OnInit {
       // Admin sees all tasks
     } else if (isManager) {
       // We don't filter by departmentId for managers to ensure we see all team tasks
-      // even if the task's DepartmentId is corrupted or null.
-      // if (departmentId) {
-      //   filters.departmentId = departmentId;
-      // }
-      // Do not fallback to employeeId for managers, so they see team tasks
     } else {
       filters.employeeId = employeeId;
     }
 
-    this.service.getTasks(filters).subscribe({
-      next: (tasks) => {
+    forkJoin({
+      tasks: this.service.getTasks(filters),
+      employees: this.service.getEmployees()
+    }).subscribe({
+      next: ({ tasks, employees }) => {
+        // Fix any tasks that have an empty assignedToEmployeeName
+        tasks.forEach(t => {
+          if (!t.assignedToEmployeeName && t.assignedToEmployeeId) {
+            const emp = employees.find((e: any) => e.employeeId === t.assignedToEmployeeId);
+            if (emp) {
+              t.assignedToEmployeeName = `${emp.firstName} ${emp.lastName}`.trim();
+            } else {
+              t.assignedToEmployeeName = 'Unknown User';
+            }
+          }
+        });
+
         this.allTasks = tasks;
         this.distributeTasks(tasks);
+        this.extractAssignees(tasks);
         this.loading = false;
       },
       error: (err) => { 
@@ -104,14 +120,63 @@ export class TaskBoardComponent implements OnInit {
     });
   }
 
-  get filteredColumns(): KanbanColumn[] {
-    if (!this.searchText && !this.filterPriority && !this.filterEmployee) return this.columns;
+  extractAssignees(tasks: TaskItem[]): void {
+    const map = new Map<string, Assignee>();
+    tasks.forEach(t => {
+      if (t.assignedToEmployeeId && t.assignedToEmployeeName) {
+        if (!map.has(t.assignedToEmployeeId)) {
+          map.set(t.assignedToEmployeeId, {
+            id: t.assignedToEmployeeId,
+            name: t.assignedToEmployeeName,
+            initials: this.getInitials(t.assignedToEmployeeName),
+            color: this.getAvatarColor(t.assignedToEmployeeId)
+          });
+        }
+      }
+    });
+    this.uniqueAssignees = Array.from(map.values());
+  }
+
+  getInitials(name: string): string {
+    if (!name) return '?';
+    const parts = name.trim().split(' ').filter(p => p.length > 0);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+
+  getAvatarColor(id: string): string {
+    const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6'];
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  toggleAssigneeFilter(id: string): void {
+    if (this.selectedAssigneeIds.has(id)) {
+      this.selectedAssigneeIds.delete(id);
+    } else {
+      this.selectedAssigneeIds.add(id);
+    }
+  }
+
+  clearAssigneeFilters(): void {
+    this.selectedAssigneeIds.clear();
+  }
+
+  get filteredColumns(): any[] {
+    if (!this.searchText && !this.filterPriority && !this.filterEmployee && this.selectedAssigneeIds.size === 0) {
+      return this.columns.map(col => ({ ...col, totalCount: col.tasks.length }));
+    }
     return this.columns.map(col => ({
       ...col,
+      totalCount: col.tasks.length,
       tasks: col.tasks.filter(t =>
         (!this.searchText || t.title.toLowerCase().includes(this.searchText.toLowerCase())) &&
         (!this.filterPriority || String(t.priority) === this.filterPriority) &&
-        (!this.filterEmployee || t.assignedToEmployeeId.includes(this.filterEmployee))
+        (!this.filterEmployee || t.assignedToEmployeeId.includes(this.filterEmployee)) &&
+        (this.selectedAssigneeIds.size === 0 || this.selectedAssigneeIds.has(t.assignedToEmployeeId))
       )
     }));
   }
@@ -137,14 +202,26 @@ export class TaskBoardComponent implements OnInit {
     });
   }
 
-  getPriorityClass(priority: number): string {
-    const map: Record<number, string> = { 1: 'low', 2: 'medium', 3: 'high', 4: 'critical' };
-    return `priority-${map[priority] || 'medium'}`;
+  getTaskTypeColor(type: number): string {
+    const map: Record<number, string> = { 
+      1: '#e5493a', // Bug (Red)
+      2: '#6554c0', // Epic (Purple)
+      3: '#36b37e', // Story (Green)
+      4: '#4c9aff', // Sub Task (Light Blue)
+      5: '#4c9aff'  // Task (Blue)
+    };
+    return map[type] || '#4c9aff';
   }
 
-  getPriorityLabel(priority: number): string {
-    const map: Record<number, string> = { 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Critical' };
-    return map[priority] || 'Medium';
+  getTaskTypeIcon(type: number): string {
+    const map: Record<number, string> = {
+      1: 'bug_report',
+      2: 'flash_on',
+      3: 'bookmark',
+      4: 'subdirectory_arrow_right',
+      5: 'check_box'
+    };
+    return map[type] || 'check_box';
   }
 
   getDaysLeft(dueDate: string): string {
