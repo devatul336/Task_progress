@@ -16,10 +16,14 @@
     </div>
   </div>
 
-  <!-- Loading -->
   <div class="loading-state" *ngIf="loading">
     <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
     <p>Loading your dashboard...</p>
+  </div>
+
+  <div class="error-state" *ngIf="errorMessage && !loading" style="padding: 20px; color: #ef4444; text-align: center;">
+    <mat-icon style="font-size: 48px; height: 48px; width: 48px;">error_outline</mat-icon>
+    <p>{{ errorMessage }}</p>
   </div>
 
   <ng-container *ngIf="!loading && dashboard">

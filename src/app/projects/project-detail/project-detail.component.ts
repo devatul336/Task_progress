@@ -22,7 +22,15 @@ import { MilestoneDialogComponent } from '../milestone-dialog/milestone-dialog.c
   <div class="proj-hero">
     <div>
       <h1>{{ project.name }}</h1>
-      <p>{{ project.description }}</p>
+      <p>{{ project['_cleanDescription'] || project.description }}</p>
+      <div *ngIf="project['_attachmentUrl']" style="margin-bottom: 12px; display: flex; gap: 12px;">
+        <a [href]="project['_attachmentUrl']" target="_blank" mat-stroked-button color="primary">
+          <mat-icon>visibility</mat-icon> View
+        </a>
+        <a [href]="project['_attachmentUrl']" download target="_blank" mat-raised-button color="primary">
+          <mat-icon>download</mat-icon> Download
+        </a>
+      </div>
       <div class="hero-meta">
         <mat-chip>{{ project.statusName }}</mat-chip>
         <mat-chip>{{ project.priorityName }}</mat-chip>
@@ -126,8 +134,23 @@ export class ProjectDetailComponent implements OnInit {
           });
         }
         this.project = p;
+        if (this.project) {
+           (this.project as any)['_attachmentUrl'] = this.getAttachmentUrl(p.description);
+           (this.project as any)['_cleanDescription'] = this.getCleanDescription(p.description);
+        }
       });
     });
+  }
+
+  getAttachmentUrl(desc: string | undefined | null): string | null {
+    if (!desc) return null;
+    const match = desc.match(/Attachment:\s*(http[^\s]+)/);
+    return match ? match[1] : null;
+  }
+  
+  getCleanDescription(desc: string | undefined | null): string {
+    if (!desc) return '';
+    return desc.replace(/\n*\s*Attachment:\s*http[^\s]+/, '');
   }
 
   openMilestoneDialog(): void {

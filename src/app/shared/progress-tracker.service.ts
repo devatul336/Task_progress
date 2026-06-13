@@ -24,6 +24,13 @@ export class ProgressTrackerService {
     return params;
   }
 
+  // File Upload
+  uploadFile(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<{ url: string }>(`${this.baseUrl}/File/upload`, formData);
+  }
+
   // Tasks
   getTasks(filters: {
     employeeId?: string; departmentId?: string; branchId?: string;
@@ -98,6 +105,16 @@ export class ProgressTrackerService {
 
   deleteProject(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/Project/${id}`);
+  }
+
+  getTrashedProjects(departmentId?: string): Observable<TrackerProject[]> {
+    let params = new HttpParams();
+    if (departmentId) params = params.set('departmentId', departmentId);
+    return this.http.get<TrackerProject[]>(`${this.baseUrl}/Project/trash`, { params });
+  }
+
+  restoreProject(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/Project/${id}/restore`, {});
   }
 
   getMilestones(projectId: number): Observable<Milestone[]> {

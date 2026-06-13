@@ -86,6 +86,8 @@ export class EmployeeDashboardComponent implements OnInit {
     this.loadDashboard(employeeId);
   }
 
+  errorMessage: string | null = null;
+
   loadDashboard(employeeId: string): void {
     this.loading = true;
     this.service.getEmployeeDashboard(employeeId).subscribe({
@@ -94,7 +96,34 @@ export class EmployeeDashboardComponent implements OnInit {
         this.buildCharts(data);
         this.loading = false;
       },
-      error: () => { this.loading = false; }
+      error: (err) => { 
+        console.error('Error fetching employee dashboard:', err);
+        this.errorMessage = 'Failed to load employee dashboard data. Please make sure the backend is running.';
+        
+        // Render empty UI instead of blank page
+        this.dashboard = {
+          employeeId: employeeId,
+          employeeName: 'Unknown User',
+          todayTasks: { total: 0, toDo: 0, inProgress: 0, underReview: 0, completed: 0, onHold: 0, cancelled: 0, overdue: 0, completionRate: 0 },
+          weekTasks: { total: 0, toDo: 0, inProgress: 0, underReview: 0, completed: 0, onHold: 0, cancelled: 0, overdue: 0, completionRate: 0 },
+          monthTasks: { total: 0, toDo: 0, inProgress: 0, underReview: 0, completed: 0, onHold: 0, cancelled: 0, overdue: 0, completionRate: 0 },
+          upcomingDeadlines: [],
+          overdueTasks: [],
+          recentlyCompleted: [],
+          activeKPIs: [],
+          activeGoals: [],
+          overallProductivityScore: 0,
+          taskCompletionRate: 0,
+          onTimeCompletionRate: 0,
+          averageKPIAchievement: 0,
+          productivityTrend: [],
+          tasksByStatus: [],
+          tasksByPriority: []
+        };
+        this.buildCharts(this.dashboard);
+
+        this.loading = false; 
+      }
     });
   }
 

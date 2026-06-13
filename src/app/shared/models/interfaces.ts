@@ -29,6 +29,7 @@ export interface TaskItem {
   isOverdue: boolean;
   createdDate: string;
   createdBy: string;
+  parentTaskId?: number;
   comments: TaskComment[];
   histories: TaskHistory[];
 }
@@ -115,8 +116,11 @@ export interface TrackerProject {
   isOverdue: boolean;
   teamMemberCount: number;
   createdDate: string;
+  modifiedDate?: string;
   milestones: Milestone[];
   teamMembers: ProjectTeamMember[];
+  _cleanDescription?: string;
+  _attachmentUrl?: string | null;
 }
 
 export interface Milestone {
@@ -341,12 +345,13 @@ export interface ChartData {
 }
 
 export const TASK_STATUS = {
-  1: 'To Do',
-  2: 'In Progress',
-  3: 'Under Review',
-  4: 'Completed',
-  5: 'On Hold',
-  6: 'Cancelled'
+  1: 'Backlog',
+  2: 'To Do',
+  3: 'In Progress',
+  4: 'Code Review',
+  5: 'Testing',
+  6: 'UAT',
+  7: 'Done'
 };
 
 export const TASK_PRIORITY = {
@@ -357,12 +362,11 @@ export const TASK_PRIORITY = {
 };
 
 export const TASK_TYPE = {
-  1: 'Daily',
-  2: 'Weekly',
-  3: 'Project',
-  4: 'Milestone',
-  5: 'Training',
-  6: 'Review'
+  1: 'Epic',
+  2: 'Story',
+  3: 'Task',
+  4: 'SubTask',
+  5: 'Bug'
 };
 
 export const GOAL_STATUS = {

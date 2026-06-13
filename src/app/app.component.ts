@@ -174,7 +174,7 @@ export class AppComponent {
 
     this.filterNavItems();
 
-    if (this.authService.getToken()) {
+    if (this.authService.getToken() || window === window.parent) {
       this.isAuthReady = true;
     }
   }
