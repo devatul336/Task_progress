@@ -76,6 +76,8 @@ export class OrgDashboardComponent implements OnInit {
 
   constructor(private service: ProgressTrackerService) {}
 
+  errorMessage: string | null = null;
+
   ngOnInit(): void {
     this.service.getOrgDashboard().subscribe({
       next: (data) => {
@@ -83,7 +85,11 @@ export class OrgDashboardComponent implements OnInit {
         this.buildCharts(data);
         this.loading = false;
       },
-      error: () => { this.loading = false; }
+      error: (err) => { 
+        console.error('Error fetching dashboard:', err);
+        this.errorMessage = 'Failed to load organization dashboard data. Please make sure the backend service is running and you have proper Admin access.';
+        this.loading = false; 
+      }
     });
   }
 

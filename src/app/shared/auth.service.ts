@@ -18,7 +18,7 @@ export class AuthService {
   /**
    * Decodes the token and extracts the role.
    * Prioritizes the userRole saved in sessionStorage (passed from shell).
-   * If no token/session is present, returns 'Employee' by default.
+   * If no token/session is present, returns 'Admin' by default.
    */
   getUserRole(): string {
     const sessionRole = sessionStorage.getItem('userRole');
@@ -46,7 +46,7 @@ export class AuthService {
    */
   getUserInfo(): { name: string, email: string, role: string } {
     const token = this.getToken();
-    if (!token) return { name: '', email: '', role: 'Employee' };
+    if (!token) return { name: '', email: '', role: 'Admin' };
 
     try {
       const decodedToken: any = jwtDecode(token);
@@ -66,11 +66,11 @@ export class AuthService {
       return {
         name: name,
         email: email,
-        role: role || 'Employee'
+        role: role || 'Admin'
       };
     } catch (error) {
       console.error('Error decoding token', error);
-      return { name: '', email: '', role: 'Employee' };
+      return { name: '', email: '', role: 'Admin' };
     }
   }
 

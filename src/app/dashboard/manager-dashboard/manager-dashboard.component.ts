@@ -36,6 +36,7 @@ import { ManagerDashboard, EmployeePerformanceSummary, TaskItem } from '../../sh
 })
 export class ManagerDashboardComponent implements OnInit {
   dashboard: ManagerDashboard | null = null;
+  errorMessage: string | null = null;
   loading = true;
   isLeaderboardExpanded = false;
   displayedColumns = ['rank', 'employeeName', 'totalTasks', 'completedTasks', 'taskCompletionRate', 'onTimeCompletionRate', 'kpiAchievementRate', 'overallScore', 'performanceBand'];
@@ -123,7 +124,11 @@ export class ManagerDashboardComponent implements OnInit {
         this.buildCharts(data);
         this.loading = false;
       },
-      error: () => { this.loading = false; }
+      error: (err) => { 
+        console.error('Error fetching manager dashboard:', err);
+        this.errorMessage = 'Failed to load manager dashboard data. Please make sure the backend is running.';
+        this.loading = false; 
+      }
     });
   }
 
