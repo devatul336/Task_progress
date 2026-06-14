@@ -1,4 +1,4 @@
-<div class="board-container">
+<div class="board-container" (click)="closeMenu()">
 
   <!-- Header -->
   <div class="board-header">
@@ -68,35 +68,40 @@
             <div class="card-header">
               <span class="task-title" [routerLink]="['/tasks', task.taskItemId]" [queryParams]="{mode: 'view'}"
                 style="cursor: pointer;">{{ task.title }}</span>
-              <button type="button" mat-icon-button [matMenuTriggerFor]="cardMenu" class="card-menu-btn"
-                (click)="$event.stopPropagation()">
-                <mat-icon>more_vert</mat-icon>
-              </button>
-              <mat-menu #cardMenu="matMenu">
-                <button mat-menu-item *ngIf="task.status !== 1" (click)="moveTask(task, 1)">
-                  <mat-icon>list_alt</mat-icon> Move to To Do
+              <div style="position: relative;">
+                <button type="button" mat-icon-button class="card-menu-btn"
+                  (mousedown)="toggleMenu($event, task.taskItemId)">
+                  <mat-icon>more_vert</mat-icon>
                 </button>
-                <button mat-menu-item *ngIf="task.status !== 2" (click)="moveTask(task, 2)">
-                  <mat-icon>pending</mat-icon> Move to In Progress
-                </button>
-                <button mat-menu-item *ngIf="task.status !== 3" (click)="moveTask(task, 3)">
-                  <mat-icon>rate_review</mat-icon> Move to Review
-                </button>
-                <button mat-menu-item *ngIf="task.status !== 4" (click)="moveTask(task, 4)">
-                  <mat-icon>check_circle</mat-icon> Mark Complete
-                </button>
-                <button mat-menu-item *ngIf="task.status !== 5" (click)="moveTask(task, 5)">
-                  <mat-icon>pause_circle</mat-icon> Put On Hold
-                </button>
-                <mat-divider></mat-divider>
-                <button mat-menu-item [routerLink]="['/tasks', task.taskItemId]" [queryParams]="{mode: 'view'}">
-                  <mat-icon>open_in_new</mat-icon> View Details
-                </button>
-                <button mat-menu-item *ngIf="canEditTask" [routerLink]="['/tasks', task.taskItemId]"
-                  [queryParams]="{mode: 'edit'}">
-                  <mat-icon>edit</mat-icon> Edit
-                </button>
-              </mat-menu>
+                <!-- Custom Dropdown Menu -->
+                <div class="custom-mfe-dropdown" *ngIf="activeMenuId === task.taskItemId"
+                  (click)="$event.stopPropagation()">
+                  <button class="dropdown-item" *ngIf="task.status !== 1" (click)="moveTask(task, 1); closeMenu()">
+                    <mat-icon>list_alt</mat-icon> Move to To Do
+                  </button>
+                  <button class="dropdown-item" *ngIf="task.status !== 2" (click)="moveTask(task, 2); closeMenu()">
+                    <mat-icon>pending</mat-icon> Move to In Progress
+                  </button>
+                  <button class="dropdown-item" *ngIf="task.status !== 3" (click)="moveTask(task, 3); closeMenu()">
+                    <mat-icon>rate_review</mat-icon> Move to Review
+                  </button>
+                  <button class="dropdown-item" *ngIf="task.status !== 4" (click)="moveTask(task, 4); closeMenu()">
+                    <mat-icon>check_circle</mat-icon> Mark Complete
+                  </button>
+                  <button class="dropdown-item" *ngIf="task.status !== 5" (click)="moveTask(task, 5); closeMenu()">
+                    <mat-icon>pause_circle</mat-icon> Put On Hold
+                  </button>
+                  <div class="dropdown-divider"></div>
+                  <button class="dropdown-item" [routerLink]="['/tasks', task.taskItemId]"
+                    [queryParams]="{mode: 'view'}" (click)="closeMenu()">
+                    <mat-icon>open_in_new</mat-icon> View Details
+                  </button>
+                  <button class="dropdown-item" *ngIf="canEditTask" [routerLink]="['/tasks', task.taskItemId]"
+                    [queryParams]="{mode: 'edit'}" (click)="closeMenu()">
+                    <mat-icon>edit</mat-icon> Edit
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="card-footer-jira">

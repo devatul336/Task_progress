@@ -56,10 +56,25 @@ export class TaskBoardComponent implements OnInit {
   constructor(private service: ProgressTrackerService, private authService: AuthService) {}
 
   canEditTask = false;
+  activeMenuId: number | null = null;
 
   ngOnInit(): void {
     this.canEditTask = this.authService.isAdminOrHR() || this.authService.isManager();
     this.loadTasks();
+  }
+
+  toggleMenu(event: Event, taskId: number) {
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.activeMenuId === taskId) {
+      this.activeMenuId = null;
+    } else {
+      this.activeMenuId = taskId;
+    }
+  }
+
+  closeMenu() {
+    this.activeMenuId = null;
   }
 
   loadTasks(): void {
@@ -233,5 +248,10 @@ export class TaskBoardComponent implements OnInit {
 
   isOverdue(task: TaskItem): boolean {
     return task.status !== 4 && task.status !== 6 && new Date(task.dueDate) < new Date();
+  }
+
+  logClick(event: any, task: any) {
+    console.log('Menu button clicked for task:', task.title);
+    console.log('Event:', event);
   }
 }
