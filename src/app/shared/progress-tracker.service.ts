@@ -155,6 +155,10 @@ export class ProgressTrackerService {
     return this.http.get<EmployeeGoal[]>(`${this.baseUrl}/Goal`, { params: this.buildParams(filters as Record<string, unknown>) });
   }
 
+  getGoalById(id: number): Observable<EmployeeGoal> {
+    return this.http.get<EmployeeGoal>(`${this.baseUrl}/Goal/${id}`);
+  }
+
   createGoal(goal: Partial<EmployeeGoal>): Observable<EmployeeGoal> {
     return this.http.post<EmployeeGoal>(`${this.baseUrl}/Goal`, goal);
   }
@@ -165,6 +169,30 @@ export class ProgressTrackerService {
 
   deleteGoal(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/Goal/${id}`);
+  }
+
+  updateGoalProgress(id: number, payload: { newValue: number; workNote: string; evidenceFileName?: string; evidenceFileUrl?: string }): Observable<EmployeeGoal> {
+    return this.http.post<EmployeeGoal>(`${this.baseUrl}/Goal/${id}/progress`, payload);
+  }
+
+  addGoalComment(id: number, text: string): Observable<EmployeeGoal> {
+    return this.http.post<EmployeeGoal>(`${this.baseUrl}/Goal/${id}/comment`, { text });
+  }
+
+  reviewGoal(id: number, payload: { isApproved: boolean; remarks: string }): Observable<EmployeeGoal> {
+    return this.http.post<EmployeeGoal>(`${this.baseUrl}/Goal/${id}/review`, payload);
+  }
+
+  addGoalMilestone(id: number, payload: { title: string; dueDate: string }): Observable<EmployeeGoal> {
+    return this.http.post<EmployeeGoal>(`${this.baseUrl}/Goal/${id}/milestones`, payload);
+  }
+
+  updateGoalMilestoneStatus(milestoneId: number, payload: { status: number; completionPercentage: number }): Observable<EmployeeGoal> {
+    return this.http.put<EmployeeGoal>(`${this.baseUrl}/Goal/milestones/${milestoneId}`, payload);
+  }
+
+  addGoalAttachment(id: number, payload: { fileName: string; fileUrl: string; fileType: string; fileSize: number }): Observable<EmployeeGoal> {
+    return this.http.post<EmployeeGoal>(`${this.baseUrl}/Goal/${id}/attachment`, payload);
   }
 
   // Reviews

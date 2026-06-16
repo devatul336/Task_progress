@@ -44,34 +44,37 @@ export class AuthService {
   /**
    * Retrieves full user info (name, email, role) from token.
    */
-  getUserInfo(): { name: string, email: string, role: string } {
+  getUserInfo(): { id: string, name: string, email: string, role: string } {
+    let id = localStorage.getItem('employeeId') || localStorage.getItem('EmployeeId') || '';
+    let name = sessionStorage.getItem('userName') || sessionStorage.getItem('UserName') || sessionStorage.getItem('username') || '';
+    let role = sessionStorage.getItem('userRole') || sessionStorage.getItem('UserRole') || sessionStorage.getItem('role') || '';
+    let email = '';
+
     const token = this.getToken();
-    if (!token) return { name: '', email: '', role: 'Admin' };
-
-    try {
-      const decodedToken: any = jwtDecode(token);
-      const role = decodedToken.role || decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-      
-      // Some tokens use unique_name or name or given_name
-      let name = decodedToken.name || decodedToken.given_name || decodedToken.unique_name || '';
-      const email = decodedToken.email || decodedToken.upn || '';
-
-      // If the name is exactly the email (or contains @), try to make it look like a real name
-      if (name && name.includes('@')) {
-        name = name.split('@')[0].split('.').map((part: string) => 
-          part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
-        ).join(' ');
+    if (token) {
+      try {
+        const decodedToken: any = jwtDecode(token);
+        if (!role) role = decodedToken.role || decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        if (!name) name = decodedToken.name || decodedToken.given_name || decodedToken.unique_name || '';
+        if (!email) email = decodedToken.email || decodedToken.upn || '';
+        if (!id) id = decodedToken.sub || decodedToken.nameid || decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '';
+      } catch (error) {
+        console.error('Error decoding token', error);
       }
-
-      return {
-        name: name,
-        email: email,
-        role: role || 'Admin'
-      };
-    } catch (error) {
-      console.error('Error decoding token', error);
-      return { name: '', email: '', role: 'Admin' };
     }
+
+    if (name && name.includes('@')) {
+      name = name.split('@')[0].split('.').map((part: string) => 
+        part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+      ).join(' ');
+    }
+
+    return {
+      id: id,
+      name: name,
+      email: email,
+      role: role || 'Admin'
+    };
   }
 
   /**

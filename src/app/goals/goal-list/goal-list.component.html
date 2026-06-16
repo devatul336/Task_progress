@@ -1,0 +1,574 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>
+      <mat-icon>dashboard</mat-icon>
+      {{ canManage ? 'Team Goals' : 'My Goals' }}
+    </h1>
+    <button mat-raised-button class="primary-btn" *ngIf="canManage" routerLink="create">
+      <mat-icon>add</mat-icon> Add Goal
+    </button>
+  </div>
+
+  <!-- KPI Summary Cards -->
+  <div class="kpi-grid" *ngIf="!loading">
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="title">Total Goals</span>
+        <div class="icon-wrapper total"><mat-icon>flag</mat-icon></div>
+      </div>
+      <div class="count">{{ totalGoals }}</div>
+      <div class="subtitle">All assigned goals</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="title">In Progress</span>
+        <div class="icon-wrapper progress"><mat-icon>sync</mat-icon></div>
+      </div>
+      <div class="count">{{ inProgressCount }}</div>
+      <div class="subtitle">Goals in progress</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="title">Pending Review</span>
+        <div class="icon-wrapper review"><mat-icon>rate_review</mat-icon></div>
+      </div>
+      <div class="count">{{ pendingReviewCount }}</div>
+      <div class="subtitle">Awaiting review</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="title">Completed</span>
+        <div class="icon-wrapper completed"><mat-icon>check_circle</mat-icon></div>
+      </div>
+      <div class="count">{{ completedCount }}</div>
+      <div class="subtitle">Successfully completed</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="title">Overdue</span>
+        <div class="icon-wrapper overdue"><mat-icon>warning</mat-icon></div>
+      </div>
+      <div class="count">{{ overdueCount }}</div>
+      <div class="subtitle">Past due date</div>
+    </div>
+  </div>
+
+  <!-- Top Controls Row (Filters & Views) -->
+  <div class="controls-row">
+    <div class="header-filters">
+      <div class="jira-search-bar">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input type="text" [(ngModel)]="searchText" (ngModelChange)="applyFilters()" placeholder="Search goals...">
+      </div>
+
+      <!-- Jira-style Avatar Filters -->
+      <div class="jira-avatar-filters" *ngIf="uniqueAssignees.length > 0">
+        <div class="avatar-group">
+          <div class="filter-avatar" *ngFor="let assignee of uniqueAssignees" [matTooltip]="assignee.name"
+            [style.background]="assignee.color" [class.selected]="selectedAssigneeIds.has(assignee.id)"
+            (click)="toggleAssigneeFilter(assignee.id)">
+            {{ assignee.initials }}
+          </div>
+        </div>
+        <button mat-raised-button color="primary" class="jira-create-btn" *ngIf="selectedAssigneeIds.size > 0"
+          (click)="clearAssigneeFilters()" style="margin-left: 8px;">Clear filters</button>
+      </div>
+
+      <mat-divider vertical class="header-divider" *ngIf="uniqueAssignees.length > 0"></mat-divider>
+
+      <!-- Jira-style Status Dropdown -->
+      <div class="jira-select-wrapper">
+        <select class="jira-select" [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
+          <option [value]="0">Status: All</option>
+          <option [value]="1">Draft</option>
+          <option [value]="2">Not Started</option>
+          <option [value]="3">In Progress</option>
+          <option [value]="4">On Hold</option>
+          <option [value]="5">Pending Review</option>
+          <option [value]="6">Completed</option>
+          <option [value]="7">Rejected</option>
+          <option [value]="8">Cancelled</option>
+        </select>
+        <mat-icon class="select-arrow">expand_more</mat-icon>
+      </div>
+
+      <!-- Jira-style Priority Dropdown -->
+      <div class="jira-select-wrapper">
+        <select class="jira-select" [(ngModel)]="priorityFilter" (ngModelChange)="applyFilters()">
+          <option [value]="0">Priority: All</option>
+          <option [value]="1">Low</option>
+          <option [value]="2">Medium</option>
+          <option [value]="3">High</option>
+          <option [value]="4">Critical</option>
+        </select>
+        <mat-icon class="select-arrow">expand_more</mat-icon>
+      </div>
+    </div>
+
+    <div class="view-toggles">
+      <button mat-icon-button [class.active]="currentView === 'grid'" (click)="setView('grid')" matTooltip="Card View">
+        <mat-icon>grid_view</mat-icon>
+      </button>
+      <button mat-icon-button [class.active]="currentView === 'kanban'" (click)="setView('kanban')"
+        matTooltip="Kanban View">
+        <mat-icon>view_kanban</mat-icon>
+      </button>
+      <button mat-icon-button [class.active]="currentView === 'table'" (click)="setView('table')"
+        matTooltip="Table View">
+        <mat-icon>table_rows</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
+
+  <div class="empty-state" *ngIf="!loading && filteredGoals.length === 0">
+    <mat-icon>search_off</mat-icon>
+    <h3>No goals found</h3>
+    <p>Try adjusting your filters or create a new goal.</p>
+    <button mat-stroked-button color="primary" *ngIf="canManage" routerLink="create">Add Goal</button>
+  </div>
+
+  <!-- VIEWS CONTAINER -->
+  <ng-container *ngIf="!loading && filteredGoals.length > 0">
+
+    <!-- GRID VIEW -->
+    <div class="goals-grid" *ngIf="currentView === 'grid'">
+      <div class="goal-card" *ngFor="let goal of filteredGoals">
+        <div class="card-top">
+          <div class="title-section">
+            <h3 [matTooltip]="goal.title">{{ goal.title }}</h3>
+            <span class="category"><mat-icon>folder</mat-icon> {{ goal.category }}</span>
+          </div>
+          <span class="priority-badge" [ngClass]="getPriorityClass(goal.priority)">
+            {{ getPriorityLabel(goal.priority) }}
+          </span>
+        </div>
+
+        <div class="card-middle">
+          <div class="assignee">
+            <ng-container *ngIf="goal.members.length === 1">
+              <div class="avatar"><mat-icon>person</mat-icon></div>
+              <div class="emp-name">{{ goal.members[0].employeeName || 'Unknown' }}</div>
+            </ng-container>
+            <ng-container *ngIf="goal.members.length > 1">
+              <div class="members-count" (click)="viewMembers(goal)" matTooltip="View all members">
+                <mat-icon>group</mat-icon> {{ goal.members.length }} Members
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- Circular Progress SVG -->
+          <div class="circular-progress" matTooltip="{{ goal.progressPercentage }}% Complete">
+            <svg>
+              <circle class="bg" cx="25" cy="25" r="20"></circle>
+              <circle class="fill" cx="25" cy="25" r="20" [style.stroke-dasharray]="125.6"
+                [style.stroke-dashoffset]="125.6 - (125.6 * goal.progressPercentage) / 100">
+              </circle>
+            </svg>
+            <div class="percentage">{{ goal.progressPercentage }}%</div>
+          </div>
+        </div>
+
+        <div class="card-bottom">
+          <div class="details">
+            <span class="target">Target: <strong>{{ goal.targetValue }} {{ goal.unit }}</strong></span>
+            <span class="due" [class.overdue]="goal.isOverdue">
+              Due: <strong>{{ goal.targetDate | date:'dd MMM yyyy' }}</strong>
+            </span>
+          </div>
+          <div class="actions">
+            <span class="status-badge" [ngClass]="getStatusClass(goal.status)">{{ goal.statusName }}</span>
+            <button mat-icon-button color="primary" [routerLink]="['/goals', goal.employeeGoalId]"
+              matTooltip="View Details">
+              <mat-icon>visibility</mat-icon>
+            </button>
+            <button mat-icon-button color="accent" *ngIf="canManage"
+              [routerLink]="['/goals', goal.employeeGoalId, 'edit']"
+              [queryParams]="goal.members.length > 1 ? { bulkIds: getBulkIds(goal) } : {}" matTooltip="Edit Goal">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KANBAN VIEW -->
+    <div class="kanban-board" *ngIf="currentView === 'kanban'" cdkDropListGroup>
+      
+      <!-- Draft Column -->
+      <div class="kanban-column col-draft">
+        <div class="col-header">
+          <div class="col-title">DRAFT <span class="badge">{{ kanbanDraft.length }}</span></div>
+        </div>
+        <div class="column-content" cdkDropList id="col-1" [cdkDropListData]="kanbanDraft"
+          (cdkDropListDropped)="drop($event, 1)">
+          <div class="task-card" *ngFor="let item of kanbanDraft" cdkDrag [cdkDragData]="item"
+            [ngClass]="getPriorityClass(item.priority)">
+            <div class="card-priority-indicator"></div>
+            <div class="card-content-jira">
+              <div class="card-header-jira">
+                <span class="card-title-jira" [routerLink]="['/goals', item.employeeGoalId]"
+                  style="cursor: pointer;">{{ item.title }}</span>
+              </div>
+              <div class="card-footer-jira">
+                <div class="card-type-key" [routerLink]="['/goals', item.employeeGoalId]" style="cursor: pointer;">
+                  <mat-icon class="jira-type-icon" style="color: #4f46e5;">flag</mat-icon>
+                  <span class="jira-key">GOL-{{ item.employeeGoalId }}</span>
+                  <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">{{ item.progressPercentage }}%</span>
+                </div>
+                <div class="avatar-stack">
+                  <div class="mini-avatar" *ngFor="let m of item.members.slice(0,3)"
+                    [style.background]="getAssigneeColor(m.employeeId)"
+                    [matTooltip]="m.employeeName">
+                    {{ getAssigneeInitials(m.employeeId) }}
+                  </div>
+                  <div class="mini-avatar" *ngIf="item.members.length > 3" style="background: #e2e8f0; color: #475569;">
+                    +{{ item.members.length - 3 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Not Started Column -->
+      <div class="kanban-column col-todo">
+        <div class="col-header">
+          <div class="col-title">NOT STARTED <span class="badge">{{ kanbanNotStarted.length }}</span></div>
+        </div>
+        <div class="column-content" cdkDropList id="col-2" [cdkDropListData]="kanbanNotStarted"
+          (cdkDropListDropped)="drop($event, 2)">
+          <div class="task-card" *ngFor="let item of kanbanNotStarted" cdkDrag [cdkDragData]="item"
+            [ngClass]="getPriorityClass(item.priority)">
+            <div class="card-priority-indicator"></div>
+            <div class="card-content-jira">
+              <div class="card-header-jira">
+                <span class="card-title-jira" [routerLink]="['/goals', item.employeeGoalId]"
+                  style="cursor: pointer;">{{ item.title }}</span>
+              </div>
+              <div class="card-footer-jira">
+                <div class="card-type-key" [routerLink]="['/goals', item.employeeGoalId]" style="cursor: pointer;">
+                  <mat-icon class="jira-type-icon" style="color: #4f46e5;">flag</mat-icon>
+                  <span class="jira-key">GOL-{{ item.employeeGoalId }}</span>
+                  <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">{{ item.progressPercentage }}%</span>
+                </div>
+                <div class="avatar-stack">
+                  <div class="mini-avatar" *ngFor="let m of item.members.slice(0,3)"
+                    [style.background]="getAssigneeColor(m.employeeId)"
+                    [matTooltip]="m.employeeName">
+                    {{ getAssigneeInitials(m.employeeId) }}
+                  </div>
+                  <div class="mini-avatar" *ngIf="item.members.length > 3" style="background: #e2e8f0; color: #475569;">
+                    +{{ item.members.length - 3 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- In Progress Column -->
+      <div class="kanban-column col-progress">
+        <div class="col-header">
+          <div class="col-title">IN PROGRESS <span class="badge">{{ kanbanInProgress.length }}</span></div>
+        </div>
+        <div class="column-content" cdkDropList id="col-3" [cdkDropListData]="kanbanInProgress"
+          (cdkDropListDropped)="drop($event, 3)">
+          <div class="task-card" *ngFor="let item of kanbanInProgress" cdkDrag [cdkDragData]="item"
+            [ngClass]="getPriorityClass(item.priority)">
+            <div class="card-priority-indicator"></div>
+            <div class="card-content-jira">
+              <div class="card-header-jira">
+                <span class="card-title-jira" [routerLink]="['/goals', item.employeeGoalId]"
+                  style="cursor: pointer;">{{ item.title }}</span>
+              </div>
+              <div class="card-footer-jira">
+                <div class="card-type-key" [routerLink]="['/goals', item.employeeGoalId]" style="cursor: pointer;">
+                  <mat-icon class="jira-type-icon" style="color: #4f46e5;">flag</mat-icon>
+                  <span class="jira-key">GOL-{{ item.employeeGoalId }}</span>
+                  <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">{{ item.progressPercentage }}%</span>
+                </div>
+                <div class="avatar-stack">
+                  <div class="mini-avatar" *ngFor="let m of item.members.slice(0,3)"
+                    [style.background]="getAssigneeColor(m.employeeId)"
+                    [matTooltip]="m.employeeName">
+                    {{ getAssigneeInitials(m.employeeId) }}
+                  </div>
+                  <div class="mini-avatar" *ngIf="item.members.length > 3" style="background: #e2e8f0; color: #475569;">
+                    +{{ item.members.length - 3 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- On Hold Column -->
+      <div class="kanban-column col-hold">
+        <div class="col-header">
+          <div class="col-title">ON HOLD <span class="badge">{{ kanbanOnHold.length }}</span></div>
+        </div>
+        <div class="column-content" cdkDropList id="col-4" [cdkDropListData]="kanbanOnHold"
+          (cdkDropListDropped)="drop($event, 4)">
+          <div class="task-card" *ngFor="let item of kanbanOnHold" cdkDrag [cdkDragData]="item"
+            [ngClass]="getPriorityClass(item.priority)">
+            <div class="card-priority-indicator"></div>
+            <div class="card-content-jira">
+              <div class="card-header-jira">
+                <span class="card-title-jira" [routerLink]="['/goals', item.employeeGoalId]"
+                  style="cursor: pointer;">{{ item.title }}</span>
+              </div>
+              <div class="card-footer-jira">
+                <div class="card-type-key" [routerLink]="['/goals', item.employeeGoalId]" style="cursor: pointer;">
+                  <mat-icon class="jira-type-icon" style="color: #4f46e5;">flag</mat-icon>
+                  <span class="jira-key">GOL-{{ item.employeeGoalId }}</span>
+                  <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">{{ item.progressPercentage }}%</span>
+                </div>
+                <div class="avatar-stack">
+                  <div class="mini-avatar" *ngFor="let m of item.members.slice(0,3)"
+                    [style.background]="getAssigneeColor(m.employeeId)"
+                    [matTooltip]="m.employeeName">
+                    {{ getAssigneeInitials(m.employeeId) }}
+                  </div>
+                  <div class="mini-avatar" *ngIf="item.members.length > 3" style="background: #e2e8f0; color: #475569;">
+                    +{{ item.members.length - 3 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Review Column -->
+      <div class="kanban-column col-review">
+        <div class="col-header">
+          <div class="col-title">PENDING REVIEW <span class="badge">{{ kanbanPendingReview.length }}</span></div>
+        </div>
+        <div class="column-content" cdkDropList id="col-5" [cdkDropListData]="kanbanPendingReview"
+          (cdkDropListDropped)="drop($event, 5)">
+          <div class="task-card" *ngFor="let item of kanbanPendingReview" cdkDrag [cdkDragData]="item"
+            [ngClass]="getPriorityClass(item.priority)">
+            <div class="card-priority-indicator"></div>
+            <div class="card-content-jira">
+              <div class="card-header-jira">
+                <span class="card-title-jira" [routerLink]="['/goals', item.employeeGoalId]"
+                  style="cursor: pointer;">{{ item.title }}</span>
+              </div>
+              <div class="card-footer-jira">
+                <div class="card-type-key" [routerLink]="['/goals', item.employeeGoalId]" style="cursor: pointer;">
+                  <mat-icon class="jira-type-icon" style="color: #4f46e5;">flag</mat-icon>
+                  <span class="jira-key">GOL-{{ item.employeeGoalId }}</span>
+                  <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">{{ item.progressPercentage }}%</span>
+                </div>
+                <div class="avatar-stack">
+                  <div class="mini-avatar" *ngFor="let m of item.members.slice(0,3)"
+                    [style.background]="getAssigneeColor(m.employeeId)"
+                    [matTooltip]="m.employeeName">
+                    {{ getAssigneeInitials(m.employeeId) }}
+                  </div>
+                  <div class="mini-avatar" *ngIf="item.members.length > 3" style="background: #e2e8f0; color: #475569;">
+                    +{{ item.members.length - 3 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Completed Column -->
+      <div class="kanban-column col-done">
+        <div class="col-header">
+          <div class="col-title">COMPLETED <span class="badge">{{ kanbanCompleted.length }}</span></div>
+        </div>
+        <div class="column-content" cdkDropList id="col-6" [cdkDropListData]="kanbanCompleted"
+          (cdkDropListDropped)="drop($event, 6)">
+          <div class="task-card" *ngFor="let item of kanbanCompleted" cdkDrag [cdkDragData]="item"
+            [ngClass]="getPriorityClass(item.priority)">
+            <div class="card-priority-indicator"></div>
+            <div class="card-content-jira">
+              <div class="card-header-jira">
+                <span class="card-title-jira" [routerLink]="['/goals', item.employeeGoalId]"
+                  style="cursor: pointer;">{{ item.title }}</span>
+              </div>
+              <div class="card-footer-jira">
+                <div class="card-type-key" [routerLink]="['/goals', item.employeeGoalId]" style="cursor: pointer;">
+                  <mat-icon class="jira-type-icon" style="color: #4f46e5;">flag</mat-icon>
+                  <span class="jira-key">GOL-{{ item.employeeGoalId }}</span>
+                  <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">{{ item.progressPercentage }}%</span>
+                </div>
+                <div class="avatar-stack">
+                  <div class="mini-avatar" *ngFor="let m of item.members.slice(0,3)"
+                    [style.background]="getAssigneeColor(m.employeeId)"
+                    [matTooltip]="m.employeeName">
+                    {{ getAssigneeInitials(m.employeeId) }}
+                  </div>
+                  <div class="mini-avatar" *ngIf="item.members.length > 3" style="background: #e2e8f0; color: #475569;">
+                    +{{ item.members.length - 3 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rejected Column -->
+      <div class="kanban-column col-rejected">
+        <div class="col-header">
+          <div class="col-title">REJECTED <span class="badge">{{ kanbanRejected.length }}</span></div>
+        </div>
+        <div class="column-content" cdkDropList id="col-7" [cdkDropListData]="kanbanRejected"
+          (cdkDropListDropped)="drop($event, 7)">
+          <div class="task-card" *ngFor="let item of kanbanRejected" cdkDrag [cdkDragData]="item"
+            [ngClass]="getPriorityClass(item.priority)">
+            <div class="card-priority-indicator"></div>
+            <div class="card-content-jira">
+              <div class="card-header-jira">
+                <span class="card-title-jira" [routerLink]="['/goals', item.employeeGoalId]"
+                  style="cursor: pointer;">{{ item.title }}</span>
+              </div>
+              <div class="card-footer-jira">
+                <div class="card-type-key" [routerLink]="['/goals', item.employeeGoalId]" style="cursor: pointer;">
+                  <mat-icon class="jira-type-icon" style="color: #4f46e5;">flag</mat-icon>
+                  <span class="jira-key">GOL-{{ item.employeeGoalId }}</span>
+                  <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">{{ item.progressPercentage }}%</span>
+                </div>
+                <div class="avatar-stack">
+                  <div class="mini-avatar" *ngFor="let m of item.members.slice(0,3)"
+                    [style.background]="getAssigneeColor(m.employeeId)"
+                    [matTooltip]="m.employeeName">
+                    {{ getAssigneeInitials(m.employeeId) }}
+                  </div>
+                  <div class="mini-avatar" *ngIf="item.members.length > 3" style="background: #e2e8f0; color: #475569;">
+                    +{{ item.members.length - 3 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cancelled Column -->
+      <div class="kanban-column col-cancelled">
+        <div class="col-header">
+          <div class="col-title">CANCELLED <span class="badge">{{ kanbanCancelled.length }}</span></div>
+        </div>
+        <div class="column-content" cdkDropList id="col-8" [cdkDropListData]="kanbanCancelled"
+          (cdkDropListDropped)="drop($event, 8)">
+          <div class="task-card" *ngFor="let item of kanbanCancelled" cdkDrag [cdkDragData]="item"
+            [ngClass]="getPriorityClass(item.priority)">
+            <div class="card-priority-indicator"></div>
+            <div class="card-content-jira">
+              <div class="card-header-jira">
+                <span class="card-title-jira" [routerLink]="['/goals', item.employeeGoalId]"
+                  style="cursor: pointer;">{{ item.title }}</span>
+              </div>
+              <div class="card-footer-jira">
+                <div class="card-type-key" [routerLink]="['/goals', item.employeeGoalId]" style="cursor: pointer;">
+                  <mat-icon class="jira-type-icon" style="color: #4f46e5;">flag</mat-icon>
+                  <span class="jira-key">GOL-{{ item.employeeGoalId }}</span>
+                  <span style="font-size: 0.75rem; color: #64748b; margin-left: 8px;">{{ item.progressPercentage }}%</span>
+                </div>
+                <div class="avatar-stack">
+                  <div class="mini-avatar" *ngFor="let m of item.members.slice(0,3)"
+                    [style.background]="getAssigneeColor(m.employeeId)"
+                    [matTooltip]="m.employeeName">
+                    {{ getAssigneeInitials(m.employeeId) }}
+                  </div>
+                  <div class="mini-avatar" *ngIf="item.members.length > 3" style="background: #e2e8f0; color: #475569;">
+                    +{{ item.members.length - 3 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE VIEW -->
+    <div class="table-container" *ngIf="currentView === 'table'">
+      <table mat-table [dataSource]="dataSource" matSort>
+
+        <ng-container matColumnDef="goalName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Goal Name </th>
+          <td mat-cell *matCellDef="let element" class="tbl-title"> {{element.title}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employee">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Employee </th>
+          <td mat-cell *matCellDef="let element">
+            <span *ngIf="element.members.length === 1">{{ element.members[0].employeeName || 'Unknown' }}</span>
+            <span *ngIf="element.members.length > 1" style="color:#4f46e5; font-weight:600; cursor:pointer;"
+              (click)="viewMembers(element)">
+              {{ element.members.length }} Members
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="category">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Category </th>
+          <td mat-cell *matCellDef="let element"> {{element.category}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="progress">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Progress </th>
+          <td mat-cell *matCellDef="let element">
+            <div class="tbl-progress">
+              <mat-progress-bar mode="determinate" [value]="element.progressPercentage"></mat-progress-bar>
+              <span>{{element.progressPercentage}}%</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Status </th>
+          <td mat-cell *matCellDef="let element" [style.color]="getStatusColor(element.status)">
+            <strong>{{element.statusName}}</strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="priority">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Priority </th>
+          <td mat-cell *matCellDef="let element">
+            <span class="priority-badge" [ngClass]="getPriorityClass(element.priority)"
+              style="font-size:0.65rem; padding:4px 8px; border-radius:4px; font-weight:bold; text-transform:uppercase;">
+              {{ getPriorityLabel(element.priority) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="dueDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Due Date </th>
+          <td mat-cell *matCellDef="let element" style="white-space: nowrap;"> {{element.targetDate | date:'dd MMM yyyy'}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef> Actions </th>
+          <td mat-cell *matCellDef="let element" style="white-space: nowrap;">
+            <button mat-icon-button color="primary" [routerLink]="['/goals', element.employeeGoalId]" matTooltip="View Details">
+              <mat-icon>visibility</mat-icon>
+            </button>
+            <button mat-icon-button color="accent" *ngIf="canManage"
+              [routerLink]="['/goals', element.employeeGoalId, 'edit']"
+              [queryParams]="element.members.length > 1 ? { bulkIds: getBulkIds(element) } : {}" matTooltip="Edit Goal">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+
+  </ng-container>
+</div>

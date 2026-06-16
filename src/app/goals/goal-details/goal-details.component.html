@@ -1,0 +1,355 @@
+<!-- Loading Overlay -->
+<div class="loading-overlay" *ngIf="loading">
+  <mat-spinner diameter="40"></mat-spinner>
+  <p>Loading Goal Details...</p>
+</div>
+
+<div class="dashboard-container" *ngIf="!loading && goal">
+
+  <!-- HERO HEADER SECTION -->
+  <div class="hero-header">
+    <div class="header-row header-row-top">
+      <div class="title-left">
+        <button mat-icon-button class="back-btn" routerLink="/goals" matTooltip="Back to Goals">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <h1>{{ goal.title }}</h1>
+      </div>
+      <div class="goal-badges">
+        <div class="badge status-badge" [style.backgroundColor]="getStatusColor(goal.status)">
+          {{ goal.statusName }}
+        </div>
+        <div class="badge priority-badge" [style.backgroundColor]="getPriorityColor(goal.priority)">
+          <mat-icon>flag</mat-icon> {{ goal.priorityName }} Priority
+        </div>
+        <div class="badge type-badge">
+          {{ goal.goalTypeName }}
+        </div>
+      </div>
+    </div>
+
+    <div class="header-row header-row-bottom">
+      <div class="category">
+        <mat-icon>folder_open</mat-icon> {{ goal.category }}
+      </div>
+      <div class="quick-stats">
+        <div class="stat-item">
+          <span class="label">Assigned To</span>
+          <div class="value user-chip">
+            <div class="avatar"><mat-icon>person</mat-icon></div>
+            {{ goal.employeeName }}
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="label">Target Date</span>
+          <div class="value" [class.overdue]="goal.isOverdue">
+            <mat-icon>calendar_today</mat-icon> {{ goal.targetDate | date:'mediumDate' }}
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="label">Days Left</span>
+          <div class="value huge-val" [class.overdue]="getDaysRemaining() === 'Overdue'">
+            {{ getDaysRemaining() }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD GRID 70/30 -->
+  <div class="dashboard-grid">
+
+    <!-- LEFT COLUMN (70%) -->
+    <div class="left-column">
+
+      <!-- Top Left Row: Progress Card & Trend Chart -->
+      <div class="progress-row">
+        <!-- Circular Progress Card -->
+        <mat-card class="dashboard-card progress-card">
+          <mat-card-header>
+            <mat-card-title>Overall Progress</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="circular-progress-container">
+              <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg" d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" [attr.stroke-dasharray]="getDashArray()" [style.stroke]="getProgressColor()" d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <text x="18" y="17.5" class="percentage">{{ goal.progressPercentage }}%</text>
+                <text x="18" y="22.5" class="sub-text">Completed</text>
+              </svg>
+            </div>
+
+            <div class="progress-breakdown">
+              <div class="pb-item">
+                <span class="pb-label">Current</span>
+                <span class="pb-val">{{ goal.currentValue }} {{ goal.unit }}</span>
+              </div>
+              <div class="pb-item">
+                <span class="pb-label">Target</span>
+                <span class="pb-val">{{ goal.targetValue }} {{ goal.unit }}</span>
+              </div>
+              <div class="pb-item">
+                <span class="pb-label">Remaining</span>
+                <span class="pb-val">{{ (goal.targetValue - goal.currentValue) > 0 ? (goal.targetValue -
+                  goal.currentValue) : 0 }} {{ goal.unit }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Progress Trend Chart Card -->
+        <mat-card class="dashboard-card chart-card">
+          <mat-card-header>
+            <mat-card-title>Progress Trend</mat-card-title>
+          </mat-card-header>
+          <mat-card-content class="chart-container">
+            <canvas *ngIf="lineChartData.labels?.length && lineChartData.labels!.length > 0" baseChart
+              [data]="lineChartData" [options]="lineChartOptions" [legend]="lineChartLegend" type="line">
+            </canvas>
+            <div class="empty-state" *ngIf="!lineChartData.labels?.length || lineChartData.labels!.length === 0">
+              <mat-icon>show_chart</mat-icon>
+              <p>Not enough data to show trend.</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Update Progress Form Card -->
+      <mat-card class="dashboard-card update-card" *ngIf="goal.progressPercentage < 100 && goal.status !== 7 && goal.status !== 8">
+        <mat-card-header>
+          <mat-card-title>Log Progress</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="update-form">
+            <div class="input-row">
+              <mat-form-field appearance="outline" class="value-input">
+                <mat-label>Current Value ({{ goal.unit }})</mat-label>
+                <input matInput type="number" [(ngModel)]="newProgressValue">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="note-input">
+                <mat-label>Work Note / Comments</mat-label>
+                <input matInput [(ngModel)]="progressWorkNote" placeholder="What did you achieve?">
+              </mat-form-field>
+            </div>
+            <div class="action-row">
+              <div class="upload-section">
+                <input type="file" #fileInput (change)="onFileSelected($event)" style="display: none;">
+                <button mat-stroked-button color="primary" class="upload-btn" (click)="fileInput.click()">
+                  <mat-icon>cloud_upload</mat-icon> Attach Evidence
+                </button>
+                <span class="selected-file" *ngIf="selectedFileName"
+                  style="margin-left: 10px; font-size: 0.8rem; color: #64748b;">{{ selectedFileName }}</span>
+              </div>
+              <button mat-flat-button color="primary" class="submit-btn" (click)="updateProgress()"
+                [disabled]="!progressWorkNote">
+                Submit Update
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Progress History List -->
+      <mat-card class="dashboard-card history-card">
+        <mat-card-header>
+          <mat-card-title>Progress History</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="history-list" *ngIf="goal.progressLogs && goal.progressLogs.length > 0">
+            <div class="history-item" *ngFor="let log of goal.progressLogs">
+              <div class="history-date">
+                <span class="day">{{ log.createdDate | date:'dd' }}</span>
+                <span class="month">{{ log.createdDate | date:'MMM' }}</span>
+                <span class="year">{{ log.createdDate | date:'yyyy' }}</span>
+              </div>
+              <div class="history-details">
+                <div class="h-top">
+                  <span class="h-prog">Updated progress to <strong>{{ log.newValue }} {{ goal.unit }}</strong></span>
+                  <span class="h-time">{{ log.createdDate | date:'shortTime' }}</span>
+                </div>
+                <div class="h-note" *ngIf="log.workNote">
+                  <mat-icon>format_quote</mat-icon> {{ log.workNote }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!goal.progressLogs || goal.progressLogs.length === 0">
+            <mat-icon>history</mat-icon>
+            <p>No progress logs recorded yet.</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Manager Review Form Card (If pending review) -->
+      <mat-card class="dashboard-card review-card" *ngIf="goal.status === 5 && userRole !== 'Admin'">
+        <mat-card-header>
+          <mat-card-title><mat-icon>admin_panel_settings</mat-icon> Manager Review Required</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Review Remarks</mat-label>
+            <textarea matInput [(ngModel)]="reviewRemarks" rows="2" placeholder="Enter feedback..." [disabled]="userRole === 'Employee'"></textarea>
+          </mat-form-field>
+          <div class="action-buttons" *ngIf="userRole !== 'Employee'">
+            <button mat-flat-button color="warn" (click)="submitReview(false)">Reject</button>
+            <button mat-flat-button style="background-color: #10b981; color: white;"
+              (click)="submitReview(true)">Approve & Complete</button>
+          </div>
+          <div *ngIf="userRole === 'Employee'" style="margin-top: 8px; font-style: italic; color: #64748b; font-size: 0.9rem;">
+            Your goal is currently awaiting review by your manager.
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Milestones Card -->
+      <mat-card class="dashboard-card milestones-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon color="primary">flag</mat-icon> Project Milestones
+          </mat-card-title>
+          <button mat-icon-button color="primary" (click)="openAddMilestoneDialog()">
+            <mat-icon>add</mat-icon>
+          </button>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="milestone-timeline">
+            <div class="ms-item" *ngFor="let ms of mockMilestones"
+              [ngClass]="{'completed': ms.status === 2, 'in-progress': ms.status === 1}">
+              <div class="ms-indicator">
+                <mat-icon *ngIf="ms.status === 2">check_circle</mat-icon>
+                <mat-icon *ngIf="ms.status === 1">radio_button_checked</mat-icon>
+                <mat-icon *ngIf="ms.status === 0">radio_button_unchecked</mat-icon>
+              </div>
+              <div class="ms-content">
+                <div class="ms-title">{{ ms.title }}</div>
+                <div class="ms-meta">
+                  <span class="ms-due">Due: {{ ms.dueDate | date:'mediumDate' }}</span>
+                  <span class="ms-pct">{{ ms.completionPercentage }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+
+    </div>
+
+    <!-- RIGHT COLUMN (30%) -->
+    <div class="right-column">
+
+      <!-- Info Card -->
+      <mat-card class="dashboard-card info-card">
+        <mat-card-header>
+          <mat-card-title>Goal Information</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="info-list">
+            <div class="info-row">
+              <span class="i-label">Goal Owner</span>
+              <span class="i-val">{{ goal.employeeName || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="i-label">Created Date</span>
+              <span class="i-val">{{ goal.createdDate | date:'mediumDate' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="i-label">Weightage</span>
+              <span class="i-val">{{ goal.weightage }}%</span>
+            </div>
+            <div class="info-row">
+              <span class="i-label">Goal Type</span>
+              <span class="i-val">{{ goal.goalTypeName }}</span>
+            </div>
+            <div class="info-row">
+              <span class="i-label">Description</span>
+              <span class="i-val desc" [innerHTML]="goal.description || 'No description provided.'"></span>
+            </div>
+            <div class="info-row" *ngIf="goal.successCriteria">
+              <span class="i-label">Success Criteria</span>
+              <span class="i-val desc" [innerHTML]="goal.successCriteria"></span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Attachments Card -->
+      <mat-card class="dashboard-card attachments-card">
+        <mat-card-header>
+          <mat-card-title>Attachments</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="attach-list" *ngIf="mockAttachments.length > 0">
+            <div class="attach-item" *ngFor="let file of mockAttachments">
+              <mat-icon class="file-icon">{{ getFileIcon(file.fileName) }}</mat-icon>
+              <div class="file-info">
+                <div class="file-name" [matTooltip]="file.fileName">{{ file.fileName }}</div>
+                <div class="file-size">{{ formatBytes(file.fileSize) }}</div>
+              </div>
+              <button mat-icon-button class="dl-btn"
+                (click)="downloadAttachment(file.fileUrl, file.fileName)"><mat-icon>download</mat-icon></button>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="mockAttachments.length === 0">
+            <mat-icon>attachment</mat-icon>
+            <p>No files attached.</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Comments Feed -->
+      <mat-card class="dashboard-card comments-card">
+        <mat-card-header>
+          <mat-card-title>Collaboration</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="comments-feed">
+            <div class="comment-msg" *ngFor="let c of goal.comments">
+              <div class="c-avatar">{{ c.createdBy.charAt(0).toUpperCase() }}</div>
+              <div class="c-body">
+                <div class="c-head">
+                  <span class="c-name">{{ c.createdBy }}</span>
+                  <span class="c-time">{{ c.createdDate | date:'short' }}</span>
+                </div>
+                <div class="c-text">{{ c.text }}</div>
+              </div>
+            </div>
+            <div class="empty-state" *ngIf="!goal.comments || goal.comments.length === 0">
+              <mat-icon>chat_bubble_outline</mat-icon>
+              <p>Be the first to comment.</p>
+            </div>
+          </div>
+          <div class="comment-input-area">
+            <input type="text" [(ngModel)]="newCommentText" placeholder="Write a comment..."
+              (keyup.enter)="addComment()">
+            <button mat-icon-button color="primary" (click)="addComment()"><mat-icon>send</mat-icon></button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Activity Timeline -->
+      <mat-card class="dashboard-card timeline-card">
+        <mat-card-header>
+          <mat-card-title>Activity Timeline</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="system-timeline" *ngIf="goal.activities && goal.activities.length > 0">
+            <div class="t-item" *ngFor="let act of goal.activities">
+              <div class="t-dot"></div>
+              <div class="t-content">
+                <div class="t-desc">{{ act.description }}</div>
+                <div class="t-meta">{{ act.createdBy }} • {{ act.createdDate | date:'MMM dd, h:mm a' }}</div>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+  </div>
+</div>

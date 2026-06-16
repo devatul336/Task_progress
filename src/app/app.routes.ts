@@ -40,6 +40,9 @@ export const routes: Routes = [
     path: 'goals',
     children: [
       { path: '', loadComponent: () => import('./goals/goal-list/goal-list.component').then(m => m.GoalListComponent) },
+      { path: 'create', loadComponent: () => import('./goals/goal-form/goal-form.component').then(m => m.GoalFormComponent) },
+      { path: ':id/edit', loadComponent: () => import('./goals/goal-form/goal-form.component').then(m => m.GoalFormComponent) },
+      { path: ':id', loadComponent: () => import('./goals/goal-details/goal-details.component').then(m => m.GoalDetailsComponent) },
     ]
   },
   {

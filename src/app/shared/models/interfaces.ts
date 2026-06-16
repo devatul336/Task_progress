@@ -186,19 +186,97 @@ export interface EmployeeGoal {
   category: string;
   status: number;
   statusName: string;
+  priority: number;
+  priorityName: string;
+  goalType: number;
+  goalTypeName: string;
   progressPercentage: number;
+  startDate?: string;
   targetDate: string;
   achievedDate?: string;
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  weightage: number;
   reviewerName?: string;
   reviewerComments?: string;
   successCriteria?: string;
   isOverdue: boolean;
   createdDate: string;
+  createdBy?: string;
   // Assignment fields
   assignedToEmployeeIds?: string[];
   assignedToEmployeeNames?: string[];
   assignedByEmployeeId?: string;
   assignedByEmployeeName?: string;
+  progressLogs?: GoalProgressLog[];
+  comments?: GoalComment[];
+  attachments?: GoalAttachment[];
+  reviews?: GoalReview[];
+  activities?: GoalActivity[];
+  milestones?: GoalMilestone[];
+}
+
+export interface GoalMilestone {
+  goalMilestoneId?: number;
+  employeeGoalId?: number;
+  title: string;
+  status: number;
+  statusName?: string;
+  dueDate: string;
+  completionPercentage: number;
+}
+
+export interface GoalProgressLog {
+  goalProgressLogId: number;
+  employeeGoalId: number;
+  previousValue: number;
+  newValue: number;
+  workNote: string;
+  evidenceFileName?: string;
+  evidenceFileUrl?: string;
+  createdDate: string;
+  createdBy: string;
+}
+
+export interface GoalComment {
+  goalCommentId: number;
+  employeeGoalId: number;
+  text: string;
+  taggedUserIds?: string;
+  createdDate: string;
+  createdBy: string;
+}
+
+export interface GoalAttachment {
+  goalAttachmentId: number;
+  employeeGoalId: number;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  createdDate: string;
+  createdBy: string;
+}
+
+export interface GoalReview {
+  goalReviewId: number;
+  employeeGoalId: number;
+  managerId: string;
+  managerName: string;
+  previousStatus: number;
+  newStatus: number;
+  remarks: string;
+  createdDate: string;
+}
+
+export interface GoalActivity {
+  goalActivityId: number;
+  employeeGoalId: number;
+  activityType: string;
+  description: string;
+  createdDate: string;
+  createdBy: string;
 }
 
 export interface ProgressReview {
@@ -370,9 +448,26 @@ export const TASK_TYPE = {
 };
 
 export const GOAL_STATUS = {
-  1: 'Not Started',
-  2: 'In Progress',
-  3: 'Achieved',
-  4: 'Missed',
-  5: 'Deferred'
+  1: 'Draft',
+  2: 'Not Started',
+  3: 'In Progress',
+  4: 'On Hold',
+  5: 'Pending Review',
+  6: 'Completed',
+  7: 'Rejected',
+  8: 'Cancelled'
+};
+
+export const GOAL_TYPE = {
+  1: 'Numeric',
+  2: 'Percentage',
+  3: 'Binary',
+  4: 'Milestone'
+};
+
+export const GOAL_PRIORITY = {
+  1: 'Low',
+  2: 'Medium',
+  3: 'High',
+  4: 'Critical'
 };
