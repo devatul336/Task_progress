@@ -11,6 +11,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AuthService } from './shared/auth.service';
 
+import { NotificationService } from './shared/notification.service';
+import { AppNotification } from './shared/models/interfaces';
+
 interface NavItem { label: string; icon: string; route: string; badge?: number; }
 
 @Component({
@@ -24,7 +27,7 @@ interface NavItem { label: string; icon: string; route: string; badge?: number; 
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   sidenavOpen = true;
 
   navGroups = [
@@ -39,6 +42,7 @@ export class AppComponent {
     {
       label: 'Work',
       items: [
+        { label: 'Epics', icon: 'flash_on', route: '/epics' },
         { label: 'Task Board', icon: 'view_kanban', route: '/tasks/board' },
         { label: 'Projects', icon: 'account_tree', route: '/projects' },
       ]
@@ -70,7 +74,14 @@ export class AppComponent {
     designation: ''
   };
 
-  constructor(private authService: AuthService) { }
+  showNotificationDropdown = false;
+  unreadCount = 0;
+  notifications: AppNotification[] = [];
+
+  constructor(
+    private authService: AuthService,
+    private notificationService: NotificationService
+  ) { }
 
   ngOnInit() {
     // Check URL for token first (if opened in new tab from shell)
@@ -176,7 +187,14 @@ export class AppComponent {
 
     if (this.authService.getToken() || window === window.parent) {
       this.isAuthReady = true;
+      this.initNotifications();
     }
+  }
+
+  private initNotifications() {
+    this.notificationService.unreadCount$.subscribe(count => this.unreadCount = count);
+    this.notificationService.notifications$.subscribe(notifs => this.notifications = notifs);
+    this.notificationService.startPolling();
   }
 
   get userInitials(): string {
@@ -193,6 +211,25 @@ export class AppComponent {
   onUserClick(event: Event) {
     event.stopPropagation();
     this.showUserDropdown = !this.showUserDropdown;
+    this.showNotificationDropdown = false;
+  }
+
+  onNotificationBellClick(event: Event) {
+    event.stopPropagation();
+    this.showNotificationDropdown = !this.showNotificationDropdown;
+    this.showUserDropdown = false;
+  }
+
+  markNotificationAsRead(notif: AppNotification, event: Event) {
+    event.stopPropagation();
+    if (!notif.isRead) {
+      this.notificationService.markAsRead(notif.notificationId).subscribe();
+    }
+  }
+
+  markAllNotificationsAsRead(event: Event) {
+    event.stopPropagation();
+    this.notificationService.markAllAsRead().subscribe();
   }
 
   @HostListener('document:click', ['$event'])
@@ -200,6 +237,9 @@ export class AppComponent {
     const target = event.target as HTMLElement;
     if (!target.closest('.user-profile') && !target.closest('.user-profile-dropdown')) {
       this.showUserDropdown = false;
+    }
+    if (!target.closest('.notification-bell') && !target.closest('.notification-dropdown')) {
+      this.showNotificationDropdown = false;
     }
   }
 

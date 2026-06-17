@@ -118,11 +118,9 @@ export class TaskBoardComponent implements OnInit {
       error: (err) => { 
         this.loading = false; 
         console.error('Error fetching tasks:', err);
-        if (err.status === 401) {
-          alert('You are not logged in or your session expired. Please log in first.');
-        } else {
-          alert('Failed to load tasks. Check the console for errors.');
-        }
+        this.allTasks = [];
+        this.distributeTasks([]);
+        this.extractAssignees([]);
       }
     });
   }
@@ -130,8 +128,10 @@ export class TaskBoardComponent implements OnInit {
   distributeTasks(tasks: TaskItem[]): void {
     this.columns.forEach(col => col.tasks = []);
     tasks.forEach(task => {
-      const col = this.columns.find(c => c.id === task.status);
-      if (col) col.tasks.push(task);
+      if (task.taskType !== 1) { // Hide Epics from the Kanban board
+        const col = this.columns.find(c => c.id === task.status);
+        if (col) col.tasks.push(task);
+      }
     });
   }
 

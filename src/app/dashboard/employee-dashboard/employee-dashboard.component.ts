@@ -98,7 +98,7 @@ export class EmployeeDashboardComponent implements OnInit {
       },
       error: (err) => { 
         console.error('Error fetching employee dashboard:', err);
-        this.errorMessage = 'Failed to load employee dashboard data. Please make sure the backend is running.';
+        this.errorMessage = null;
         
         // Render empty UI instead of blank page
         this.dashboard = {

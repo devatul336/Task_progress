@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   TaskItem, CreateTaskItem, UpdateTaskItem, TaskComment, TaskSummary,
@@ -70,6 +70,10 @@ export class ProgressTrackerService {
 
   deleteTask(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/Task/${id}`);
+  }
+
+  getSubTasks(taskId: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/Task/${taskId}/subtasks`);
   }
 
   addComment(taskId: number, comment: string): Observable<TaskComment> {
@@ -204,10 +208,17 @@ export class ProgressTrackerService {
     return this.http.post<ProgressReview>(`${this.baseUrl}/Review`, review);
   }
 
-  acknowledgeReview(id: number, comments: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.baseUrl}/Review/${id}/acknowledge`, JSON.stringify(comments), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+  updateReview(review: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/Review/${review.progressReviewId}`, review);
+  }
+
+  acknowledgeReview(reviewId: number, comments: string): Observable<any> {
+    const headers = new HttpHeaders().set('Content-Type', 'application/json');
+    return this.http.post<any>(`${this.baseUrl}/Review/${reviewId}/acknowledge`, JSON.stringify(comments), { headers });
+  }
+
+  quickRateEmployee(employeeId: string, rating: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/Review/quick-rate/${employeeId}?rating=${rating}`, {});
   }
 
   // Dashboards

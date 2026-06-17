@@ -1,3 +1,14 @@
+export interface AppNotification {
+  notificationId: number;
+  employeeId: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  relatedEntityId?: string;
+  createdDate: string;
+}
+
 export interface TaskItem {
   taskItemId: number;
   title: string;
@@ -378,6 +389,7 @@ export interface EmployeePerformanceSummary {
   goalAchievementRate: number;
   overallScore: number;
   performanceBand: string;
+  reviewRating?: number;
   tasks?: any[];
 }
 

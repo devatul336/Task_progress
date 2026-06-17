@@ -33,6 +33,37 @@
       <span class="toolbar-spacer"></span>
 
       <div class="topbar-actions" style="display: flex; align-items: center; position: relative;">
+        <!-- Notification Bell -->
+        <button type="button" class="notification-bell" (click)="onNotificationBellClick($event)" style="background:none;border:none;cursor:pointer;padding:8px;margin-right:10px;display:flex;align-items:center;position:relative;">
+            <mat-icon style="color: #666;">notifications</mat-icon>
+            <span *ngIf="unreadCount > 0" style="position:absolute;top:2px;right:2px;background:#ef4444;color:white;font-size:10px;font-weight:bold;padding:2px 6px;border-radius:10px;line-height:1;">{{ unreadCount }}</span>
+        </button>
+
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" *ngIf="showNotificationDropdown" style="position: absolute; top: 50px; right: 60px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); width: 360px; max-height: 480px; z-index: 1000; text-align: left; font-family: inherit; display: flex; flex-direction: column;">
+            <div style="padding: 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Notifications</h3>
+                <button type="button" (click)="markAllNotificationsAsRead($event)" *ngIf="unreadCount > 0" style="background:none;border:none;color:#667eea;cursor:pointer;font-size:13px;font-weight:500;">Mark all read</button>
+            </div>
+            <div style="overflow-y: auto; flex: 1;">
+                <div *ngIf="notifications.length === 0" style="padding: 30px; text-align: center; color: #888; font-size: 14px;">
+                    No notifications
+                </div>
+                <div *ngFor="let notif of notifications" (click)="markNotificationAsRead(notif, $event)" [style.background-color]="notif.isRead ? 'white' : '#f0f4ff'" style="padding: 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s;">
+                    <div style="display: flex; gap: 12px;">
+                        <div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: #e0e7ff; color: #4f46e5; display: flex; align-items: center; justify-content: center;">
+                            <mat-icon>{{ notif.type === 'TaskAssigned' ? 'assignment' : notif.type === 'GoalAssigned' ? 'emoji_events' : 'notifications' }}</mat-icon>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; color: #111; margin-bottom: 4px;">{{ notif.title }}</div>
+                            <div style="font-size: 13px; color: #555; margin-bottom: 6px; line-height: 1.4;">{{ notif.message }}</div>
+                            <div style="font-size: 11px; color: #888;">{{ notif.createdDate | date:'medium' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- User Dropdown Menu Toggle -->
         <button type="button" class="user-profile" (click)="onUserClick($event)" style="background:none;border:none;cursor:pointer;padding:0;margin-left:15px;display:flex;align-items:center;gap:4px;">
             <div class="avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px;">

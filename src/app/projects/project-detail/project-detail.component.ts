@@ -9,14 +9,15 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
-import { TrackerProject, Milestone } from '../../shared/models/interfaces';
+import { TrackerProject, Milestone, TaskItem } from '../../shared/models/interfaces';
 import { MilestoneDialogComponent } from '../milestone-dialog/milestone-dialog.component';
 
 @Component({
   selector: 'app-project-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatTabsModule, MatTableModule, MatDialogModule],
+  imports: [CommonModule, RouterModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatTabsModule, MatTableModule, MatDialogModule, MatTooltipModule],
   template: `
 <div class="page-container" *ngIf="project">
   <div class="proj-hero">
@@ -76,6 +77,39 @@ import { MilestoneDialogComponent } from '../milestone-dialog/milestone-dialog.c
         </div>
       </div>
     </mat-tab>
+    <mat-tab label="Timeline">
+      <div class="tab-pad">
+        <div class="gantt-container" *ngIf="timelineTasks.length > 0">
+          <!-- Timeline Header Dates -->
+          <div class="gantt-header">
+            <div class="gantt-date-start">{{ timelineStart | date:'MMM dd' }}</div>
+            <div class="gantt-date-end">{{ timelineEnd | date:'MMM dd' }}</div>
+          </div>
+          <!-- Timeline Grid -->
+          <div class="gantt-grid">
+            <div class="gantt-row" *ngFor="let t of timelineTasks">
+              <div class="gantt-label" [matTooltip]="t.title">{{ t.title }}</div>
+              <div class="gantt-track">
+                <!-- Project Bound line -->
+                <div class="gantt-project-bound"></div>
+                <!-- Task Bar -->
+                <div class="gantt-bar" 
+                     [style.left.%]="t.startPct" 
+                     [style.width.%]="t.widthPct"
+                     [class.completed]="t.status === 3"
+                     [class.in-progress]="t.status === 2"
+                     [matTooltip]="(t.startDate | date:'MMM dd') + ' - ' + (t.dueDate | date:'MMM dd')">
+                  <div class="gantt-progress" [style.width.%]="t.completionPercentage"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="timelineTasks.length === 0" style="padding: 40px; text-align: center; color: #888;">
+          No tasks available for timeline view.
+        </div>
+      </div>
+    </mat-tab>
   </mat-tab-group>
 </div>`,
   styles: [`
@@ -105,10 +139,28 @@ import { MilestoneDialogComponent } from '../milestone-dialog/milestone-dialog.c
 .m-info { display: flex; flex-direction: column; }
 .m-name { font-weight: 500; font-size: 0.9rem; }
 .m-role { font-size: 0.75rem; color: #94a3b8; }
+
+/* Gantt Chart CSS */
+.gantt-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+.gantt-header { display: flex; justify-content: space-between; margin-left: 200px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 0.8rem; font-weight: 600; }
+.gantt-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.gantt-row { display: flex; align-items: center; gap: 16px; height: 36px; }
+.gantt-label { width: 184px; font-size: 0.85rem; font-weight: 500; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.gantt-track { flex: 1; height: 100%; position: relative; background: #f8fafc; border-radius: 4px; overflow: hidden; display: flex; align-items: center; }
+.gantt-project-bound { position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: #e2e8f0; transform: translateY(-50%); }
+.gantt-bar { position: absolute; height: 24px; border-radius: 12px; background: #cbd5e1; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.2s; }
+.gantt-bar.in-progress { background: #bae6fd; }
+.gantt-bar.completed { background: #bbf7d0; }
+.gantt-progress { height: 100%; background: #6366f1; opacity: 0.8; }
+.gantt-bar.in-progress .gantt-progress { background: #0ea5e9; }
+.gantt-bar.completed .gantt-progress { background: #10b981; }
   `]
 })
 export class ProjectDetailComponent implements OnInit {
   project: TrackerProject | null = null;
+  timelineTasks: any[] = [];
+  timelineStart: Date = new Date();
+  timelineEnd: Date = new Date();
 
   constructor(
     private service: ProgressTrackerService,
@@ -137,7 +189,51 @@ export class ProjectDetailComponent implements OnInit {
         if (this.project) {
            (this.project as any)['_attachmentUrl'] = this.getAttachmentUrl(p.description);
            (this.project as any)['_cleanDescription'] = this.getCleanDescription(p.description);
+           this.loadTimelineTasks(id);
         }
+      });
+    });
+  }
+
+  loadTimelineTasks(projectId: number) {
+    this.service.getTasks({ projectId }).subscribe(tasks => {
+      if (!tasks || tasks.length === 0) return;
+      
+      // Calculate global start and end
+      let minDate = new Date(this.project?.startDate || tasks[0].startDate || new Date());
+      let maxDate = new Date(this.project?.endDate || tasks[0].dueDate || new Date());
+      
+      tasks.forEach((t: any) => {
+        const s = new Date(t.startDate || t.createdDate);
+        const d = new Date(t.dueDate || new Date());
+        if (s < minDate) minDate = s;
+        if (d > maxDate) maxDate = d;
+      });
+
+      // Add a small buffer of 1 day to ends
+      minDate.setDate(minDate.getDate() - 1);
+      maxDate.setDate(maxDate.getDate() + 1);
+
+      this.timelineStart = minDate;
+      this.timelineEnd = maxDate;
+      const totalDuration = maxDate.getTime() - minDate.getTime();
+
+      this.timelineTasks = tasks.map((t: any) => {
+        const s = new Date(t.startDate || t.createdDate);
+        const d = new Date(t.dueDate || new Date());
+        
+        // Calculate percentages
+        const startDiff = Math.max(0, s.getTime() - minDate.getTime());
+        const startPct = (startDiff / totalDuration) * 100;
+        
+        const duration = Math.max(0, d.getTime() - s.getTime());
+        const widthPct = (duration / totalDuration) * 100;
+
+        return {
+          ...t,
+          startPct: Math.min(Math.max(startPct, 0), 100),
+          widthPct: Math.min(Math.max(widthPct, 1), 100) // min 1% width
+        };
       });
     });
   }

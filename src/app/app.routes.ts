@@ -22,6 +22,10 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'epics',
+    loadComponent: () => import('./tasks/epic-list/epic-list.component').then(m => m.EpicListComponent)
+  },
+  {
     path: 'projects',
     canActivate: [adminGuard],
     children: [

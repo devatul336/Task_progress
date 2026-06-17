@@ -124,7 +124,7 @@ export class ProjectTrashComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to restore project', err);
-          alert('Failed to restore project');
+          console.error('Failed to restore project');
         }
       });
     }

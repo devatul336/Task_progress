@@ -76,27 +76,29 @@
                 <!-- Custom Dropdown Menu -->
                 <div class="custom-mfe-dropdown" *ngIf="activeMenuId === task.taskItemId"
                   (click)="$event.stopPropagation()">
-                  <button class="dropdown-item" *ngIf="task.status !== 1" (click)="moveTask(task, 1); closeMenu()">
-                    <mat-icon>list_alt</mat-icon> Move to To Do
-                  </button>
-                  <button class="dropdown-item" *ngIf="task.status !== 2" (click)="moveTask(task, 2); closeMenu()">
-                    <mat-icon>pending</mat-icon> Move to In Progress
-                  </button>
-                  <button class="dropdown-item" *ngIf="task.status !== 3" (click)="moveTask(task, 3); closeMenu()">
-                    <mat-icon>rate_review</mat-icon> Move to Review
-                  </button>
-                  <button class="dropdown-item" *ngIf="task.status !== 4" (click)="moveTask(task, 4); closeMenu()">
-                    <mat-icon>check_circle</mat-icon> Mark Complete
-                  </button>
-                  <button class="dropdown-item" *ngIf="task.status !== 5" (click)="moveTask(task, 5); closeMenu()">
-                    <mat-icon>pause_circle</mat-icon> Put On Hold
-                  </button>
-                  <div class="dropdown-divider"></div>
+                  <ng-container *ngIf="task.projectStatus !== 4">
+                    <button class="dropdown-item" *ngIf="task.status !== 1" (click)="moveTask(task, 1); closeMenu()">
+                      <mat-icon>list_alt</mat-icon> Move to To Do
+                    </button>
+                    <button class="dropdown-item" *ngIf="task.status !== 2" (click)="moveTask(task, 2); closeMenu()">
+                      <mat-icon>pending</mat-icon> Move to In Progress
+                    </button>
+                    <button class="dropdown-item" *ngIf="task.status !== 3" (click)="moveTask(task, 3); closeMenu()">
+                      <mat-icon>rate_review</mat-icon> Move to Review
+                    </button>
+                    <button class="dropdown-item" *ngIf="task.status !== 4" (click)="moveTask(task, 4); closeMenu()">
+                      <mat-icon>check_circle</mat-icon> Mark Complete
+                    </button>
+                    <button class="dropdown-item" *ngIf="task.status !== 5" (click)="moveTask(task, 5); closeMenu()">
+                      <mat-icon>pause_circle</mat-icon> Put On Hold
+                    </button>
+                    <div class="dropdown-divider"></div>
+                  </ng-container>
                   <button class="dropdown-item" [routerLink]="['/tasks', task.taskItemId]"
                     [queryParams]="{mode: 'view'}" (click)="closeMenu()">
                     <mat-icon>open_in_new</mat-icon> View Details
                   </button>
-                  <button class="dropdown-item" *ngIf="canEditTask" [routerLink]="['/tasks', task.taskItemId]"
+                  <button class="dropdown-item" *ngIf="canEditTask && task.projectStatus !== 4" [routerLink]="['/tasks', task.taskItemId]"
                     [queryParams]="{mode: 'edit'}" (click)="closeMenu()">
                     <mat-icon>edit</mat-icon> Edit
                   </button>

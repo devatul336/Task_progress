@@ -37,6 +37,11 @@ import { ProgressTrackerService } from '../../shared/progress-tracker.service';
         <div class="file-upload-container">
           <span class="file-label">Attach File (Optional): </span>
           <input type="file" (change)="onFileSelected($event)" class="file-input">
+          <div *ngIf="existingAttachmentUrl && !selectedFile" class="existing-attachment" style="margin-top: 12px; border-top: 1px solid #eee; padding-top: 12px;">
+            <p style="margin: 0 0 8px; font-weight: 500;">Current Attachment:</p>
+            <img *ngIf="isImage(existingAttachmentUrl)" [src]="existingAttachmentUrl" alt="Attachment Preview" style="max-width: 100%; max-height: 200px; border-radius: 4px;">
+            <a *ngIf="!isImage(existingAttachmentUrl)" [href]="existingAttachmentUrl" target="_blank" style="color: #2563eb; text-decoration: none;">View File</a>
+          </div>
         </div>
 
         <div class="row">
@@ -53,12 +58,11 @@ import { ProgressTrackerService } from '../../shared/progress-tracker.service';
           <mat-form-field appearance="outline" class="half-width">
             <mat-label>Status</mat-label>
             <mat-select formControlName="status">
-              <mat-option [value]="1">Not Started</mat-option>
-              <mat-option [value]="2">In Progress</mat-option>
-              <mat-option [value]="3">Under Review</mat-option>
+              <mat-option [value]="1">Planning</mat-option>
+              <mat-option [value]="2">Active</mat-option>
+              <mat-option [value]="3">On Hold</mat-option>
               <mat-option [value]="4">Completed</mat-option>
-              <mat-option [value]="5">On Hold</mat-option>
-              <mat-option [value]="6">Cancelled</mat-option>
+              <mat-option [value]="5">Cancelled</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -194,6 +198,12 @@ export class ProjectDialogComponent implements OnInit {
   selectedFile: File | null = null;
   isEdit = false;
   projectId?: number;
+  existingAttachmentUrl: string | null = null;
+
+  isImage(url: string | null): boolean {
+    if (!url) return false;
+    return url.match(/\.(jpeg|jpg|gif|png)$/i) != null;
+  }
 
   get showTaskSection() {
     return this.projectForm.get('createTask')?.value === true;
@@ -236,16 +246,24 @@ export class ProjectDialogComponent implements OnInit {
         this.isEdit = true;
         this.projectId = this.data.project.projectId;
         const p = this.data.project;
+        
+        let cleanDesc = p.description || '';
+        const match = cleanDesc.match(/\n*\s*Attachment:\s*(http[^\n]+)/);
+        if (match) {
+            this.existingAttachmentUrl = match[1].trim();
+        }
+        cleanDesc = cleanDesc.replace(/\n*\s*Attachment:\s*http[^\n]+/, '');
+
         this.projectForm.patchValue({
           name: p.name,
-          description: p._cleanDescription || p.description,
+          description: cleanDesc,
           priority: p.priority,
           status: p.status,
           completionPercentage: p.completionPercentage,
           projectManagerId: p.projectManagerId,
           startDate: p.startDate ? new Date(p.startDate) : new Date(),
           endDate: p.endDate ? new Date(p.endDate) : new Date(),
-          teamMemberIds: p.teamMemberIds || []
+          teamMemberIds: p.teamMembers ? p.teamMembers.map((tm: any) => tm.employeeId) : []
         });
         this.projectForm.get('createTask')?.disable();
       }
@@ -307,18 +325,22 @@ export class ProjectDialogComponent implements OnInit {
         finalDescription = finalDescription ? `${finalDescription}\n\nAttachment: ${fileUrl}` : `Attachment: ${fileUrl}`;
       }
 
-      const payload = {
+      const payload: any = {
         name: val.name,
         description: finalDescription,
         priority: val.priority,
-      status: val.status,
-      completionPercentage: val.completionPercentage,
-      projectManagerId: val.projectManagerId,
-      startDate: val.startDate,
-      endDate: val.endDate,
-      teamMemberIds: val.teamMemberIds,
-      projectManagerName: manager ? manager.firstName + ' ' + manager.lastName : val.projectManagerId
-    };
+        status: val.status,
+        completionPercentage: val.completionPercentage,
+        projectManagerId: val.projectManagerId,
+        startDate: val.startDate,
+        endDate: val.endDate,
+        teamMemberIds: val.teamMemberIds,
+        projectManagerName: manager ? manager.firstName + ' ' + manager.lastName : val.projectManagerId
+      };
+
+      if (this.isEdit) {
+        payload.projectId = this.projectId;
+      }
 
     if (this.isEdit) {
       this.service.updateProject(this.projectId!, payload).subscribe({
@@ -390,7 +412,7 @@ export class ProjectDialogComponent implements OnInit {
         }
       });
     } else {
-      finalizeSave();
+      finalizeSave(this.existingAttachmentUrl || undefined);
     }
   }
 }

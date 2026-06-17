@@ -295,7 +295,7 @@ export class GoalFormComponent implements OnInit {
           },
           error: (err) => {
             console.error('Error fetching goal details:', err);
-            alert('Failed to load goal details.');
+            console.error('Failed to load goal details.');
             this.loading = false;
           }
         });

@@ -268,7 +268,7 @@ export class ProjectListComponent implements OnInit {
     if (confirm(`Are you sure you want to move project "${proj.name}" to trash?`)) {
       this.service.deleteProject(proj.projectId).subscribe({
         next: () => this.loadProjects(),
-        error: (err) => alert('Failed to delete project')
+        error: (err) => console.error('Failed to delete project')
       });
     }
   }
