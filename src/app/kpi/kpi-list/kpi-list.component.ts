@@ -17,6 +17,7 @@ import { AuthService } from '../../shared/auth.service';
 import { KPIDefinition, EmployeeKPI } from '../../shared/models/interfaces';
 import { KpiDefinitionDialogComponent } from '../kpi-definition-dialog/kpi-definition-dialog.component';
 import { AssignKpiDialogComponent } from '../assign-kpi-dialog/assign-kpi-dialog.component';
+import { UpdateKpiDialogComponent } from '../update-kpi-dialog/update-kpi-dialog.component';
 
 @Component({
   selector: 'app-kpi-list',
@@ -43,18 +44,26 @@ import { AssignKpiDialogComponent } from '../assign-kpi-dialog/assign-kpi-dialog
             <mat-card-header>
               <mat-icon mat-card-avatar>flag</mat-icon>
               <mat-card-title>{{ kpi.kpiName }}</mat-card-title>
-              <mat-card-subtitle>{{ kpi.category }} | {{ kpi.unit }}</mat-card-subtitle>
+              <mat-card-subtitle>
+                {{ kpi.category }} | {{ kpi.unit }} <br/>
+                <span class="emp-name" *ngIf="kpi.employeeName"><mat-icon inline>person</mat-icon> {{ kpi.employeeName }}</span>
+              </mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
               <div class="kpi-values">
                 <div class="kv-item"><span class="kv-val">{{ kpi.targetValue }}</span><span class="kv-lbl">Target</span></div>
                 <div class="kv-item"><span class="kv-val green">{{ kpi.achievedValue }}</span><span class="kv-lbl">Achieved</span></div>
-                <div class="kv-item"><span class="kv-val" [class.green]="kpi.achievementPercentage>=80" [class.red]="kpi.achievementPercentage<60">{{ kpi.achievementPercentage | number:'1.0-1' }}%</span><span class="kv-lbl">Score</span></div>
+                <div class="kv-item"><span class="kv-val" [class.green]="kpi.score>=80" [class.red]="kpi.score<60">{{ kpi.score | number:'1.0-1' }}%</span><span class="kv-lbl">Score</span></div>
               </div>
-              <mat-progress-bar mode="determinate" [value]="kpi.achievementPercentage > 100 ? 100 : kpi.achievementPercentage"
-                [color]="kpi.achievementPercentage >= 80 ? 'primary' : kpi.achievementPercentage >= 50 ? 'accent' : 'warn'"></mat-progress-bar>
+              <mat-progress-bar mode="determinate" [value]="kpi.score"
+                [color]="kpi.score >= 80 ? 'primary' : kpi.score >= 50 ? 'accent' : 'warn'"></mat-progress-bar>
               <div class="kpi-period">{{ kpi.periodStart | date:'dd MMM' }} – {{ kpi.periodEnd | date:'dd MMM yyyy' }}</div>
             </mat-card-content>
+            <mat-card-actions align="end" *ngIf="kpi.targetValue > 0">
+              <button mat-button color="primary" (click)="openUpdateDialog(kpi)">
+                <mat-icon>track_changes</mat-icon> Update Progress
+              </button>
+            </mat-card-actions>
           </mat-card>
         </div>
         <div class="empty" *ngIf="!employeeKPIs.length && !loading">No KPIs assigned yet.</div>
@@ -89,6 +98,8 @@ import { AssignKpiDialogComponent } from '../assign-kpi-dialog/assign-kpi-dialog
 .kv-val { display: block; font-size: 1.5rem; font-weight: 700; color: #1e293b; &.green { color: #10b981; } &.red { color: #ef4444; } }
 .kv-lbl { font-size: 0.75rem; color: #94a3b8; }
 .kpi-period { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; text-align: right; }
+.emp-name { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #6366f1; font-weight: 500; margin-top: 4px; }
+.emp-name mat-icon { font-size: 16px; width: 16px; height: 16px; }
 .w-full { width: 100%; }
 .empty { text-align: center; color: #94a3b8; padding: 48px; }
   `]
@@ -144,6 +155,16 @@ export class KpiListComponent implements OnInit {
 
   openAssignDialog() {
     const dialogRef = this.dialog.open(AssignKpiDialogComponent, { width: '500px' });
+    dialogRef.afterClosed().subscribe(res => {
+      if (res) this.loadData();
+    });
+  }
+
+  openUpdateDialog(kpi: EmployeeKPI) {
+    const dialogRef = this.dialog.open(UpdateKpiDialogComponent, { 
+      width: '450px',
+      data: { kpi: kpi }
+    });
     dialogRef.afterClosed().subscribe(res => {
       if (res) this.loadData();
     });

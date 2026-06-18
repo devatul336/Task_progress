@@ -9,6 +9,25 @@ export interface AppNotification {
   createdDate: string;
 }
 
+export enum StatusCategory {
+  ToDo = 1,
+  InProgress = 2,
+  Review = 3,
+  Testing = 4,
+  Completed = 5,
+  OnHold = 6,
+  Cancelled = 7
+}
+
+export interface TaskStatusMaster {
+  taskStatusId: number;
+  name: string;
+  category: StatusCategory;
+  displayOrder: number;
+  colorClass: string;
+  isActive: boolean;
+}
+
 export interface TaskItem {
   taskItemId: number;
   title: string;

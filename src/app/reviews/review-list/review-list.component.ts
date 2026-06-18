@@ -1,11 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 import { AuthService } from '../../shared/auth.service';
 import { ProgressReview } from '../../shared/models/interfaces';
@@ -15,7 +18,7 @@ import { ReviewDialogComponent } from '../review-dialog/review-dialog.component'
 @Component({
   selector: 'app-review-list',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatTableModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatProgressBarModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule],
   template: `
 <div class="page-container">
   <div class="page-header">
@@ -26,8 +29,8 @@ import { ReviewDialogComponent } from '../review-dialog/review-dialog.component'
     <mat-card class="review-card" *ngFor="let review of reviews">
       <mat-card-header>
         <mat-icon mat-card-avatar>assignment_ind</mat-icon>
-        <mat-card-title>{{ review.reviewPeriod }}</mat-card-title>
-        <mat-card-subtitle>By {{ review.reviewerName || 'Admin / Manager' }} | {{ review.reviewDate | date:'dd MMM yyyy' }}</mat-card-subtitle>
+        <mat-card-title>{{ review.reviewPeriod }} - For {{ review.employeeName || 'Employee' }}</mat-card-title>
+        <mat-card-subtitle>Reviewed By {{ review.reviewerName || 'Manager' }} | {{ review.reviewDate | date:'dd MMM yyyy' }}</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         <div class="rating-big">
@@ -43,12 +46,24 @@ import { ReviewDialogComponent } from '../review-dialog/review-dialog.component'
           <p *ngIf="review.strengths"><strong>Strengths:</strong> {{ review.strengths }}</p>
           <p *ngIf="review.areasOfImprovement"><strong>Areas to Improve:</strong> {{ review.areasOfImprovement }}</p>
           <p *ngIf="review.goalsForNextPeriod"><strong>Next Period Goals:</strong> {{ review.goalsForNextPeriod }}</p>
-          <p *ngIf="review.comments"><strong>Comments:</strong> {{ review.comments }}</p>
+          <p *ngIf="review.comments"><strong>Manager Comments:</strong> {{ review.comments }}</p>
         </div>
+        <div class="review-sections employee-feedback-display" *ngIf="review.employeeComments && review.status === 3">
+          <p><strong>Employee Feedback:</strong> {{ review.employeeComments }}</p>
+        </div>
+        
+        <div class="employee-feedback-input" *ngIf="review.status === 2 && !canManage" style="margin-top: 15px;">
+           <mat-form-field appearance="outline" style="width: 100%;">
+             <mat-label>Your Feedback (Optional)</mat-label>
+             <textarea matInput [(ngModel)]="review.employeeComments" rows="2" placeholder="Write your feedback here..."></textarea>
+           </mat-form-field>
+        </div>
+
         <div class="review-footer">
-          <mat-chip [class]="'status-' + review.statusName.toLowerCase()">{{ review.statusName }}</mat-chip>
+          <mat-chip [class]="'status-' + (review.statusName ? review.statusName.toLowerCase() : 'draft')">{{ review.statusName || 'Draft' }}</mat-chip>
           <span class="ack-date" *ngIf="review.acknowledgedDate">Acknowledged: {{ review.acknowledgedDate | date:'dd MMM yyyy' }}</span>
-          <button mat-button color="primary" *ngIf="review.status === 2" (click)="acknowledge(review)">Acknowledge</button>
+          <button mat-button color="accent" *ngIf="review.status === 1 && canManage" (click)="submitReview(review)">Submit</button>
+          <button mat-button color="primary" *ngIf="review.status === 2 && !canManage" (click)="acknowledge(review)">Acknowledge</button>
         </div>
       </mat-card-content>
     </mat-card>
@@ -147,8 +162,20 @@ export class ReviewListComponent implements OnInit {
     });
   }
 
+  submitReview(review: ProgressReview): void {
+    const updated = { ...review, status: 2, statusName: 'Submitted' };
+    this.service.updateReview(updated).subscribe({
+      next: () => {
+        review.status = 2;
+        review.statusName = 'Submitted';
+      },
+      error: (err) => console.error('Failed to submit review', err)
+    });
+  }
+
   acknowledge(review: ProgressReview): void {
-    this.service.acknowledgeReview(review.progressReviewId, '').subscribe(() => {
+    const comments = review.employeeComments ? review.employeeComments : '';
+    this.service.acknowledgeReview(review.progressReviewId, comments).subscribe(() => {
       review.status = 3;
       review.statusName = 'Acknowledged';
     });

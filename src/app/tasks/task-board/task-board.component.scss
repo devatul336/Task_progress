@@ -193,46 +193,7 @@
   padding: 12px;
   display: flex;
   flex-direction: column;
-
-  &.col-todo {
-    background: #f0f4ff;
-
-    .col-header {
-      border-bottom-color: #6366f1;
-    }
-  }
-
-  &.col-progress {
-    background: #fffbeb;
-
-    .col-header {
-      border-bottom-color: #f59e0b;
-    }
-  }
-
-  &.col-review {
-    background: #faf5ff;
-
-    .col-header {
-      border-bottom-color: #8b5cf6;
-    }
-  }
-
-  &.col-done {
-    background: #f0fdf4;
-
-    .col-header {
-      border-bottom-color: #10b981;
-    }
-  }
-
-  &.col-hold {
-    background: #f8fafc;
-
-    .col-header {
-      border-bottom-color: #94a3b8;
-    }
-  }
+  background: #f4f5f7;
 }
 
 .col-header {
@@ -286,8 +247,19 @@
   }
 
   &.overdue-card {
-    border-left: 2px solid #ff5630;
+    border-left: 3px solid #ff5630;
   }
+}
+
+.overdue-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #ff5630;
+  background: #ffebe6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
 }
 
 .card-body {

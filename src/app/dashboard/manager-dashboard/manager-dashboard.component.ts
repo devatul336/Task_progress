@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../shared/auth.service';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -21,7 +22,7 @@ import { ManagerDashboard, EmployeePerformanceSummary, TaskItem } from '../../sh
   selector: 'app-manager-dashboard',
   standalone: true,
   imports: [
-    CommonModule, RouterModule, MatCardModule, MatIconModule, MatButtonModule,
+    CommonModule, FormsModule, RouterModule, MatCardModule, MatIconModule, MatButtonModule,
     MatProgressBarModule, MatChipsModule, MatTableModule, MatSortModule,
     MatTooltipModule, MatBadgeModule, BaseChartDirective
   ],
@@ -46,6 +47,8 @@ export class ManagerDashboardComponent implements OnInit {
   loadingTasks: { [employeeId: string]: boolean } = {};
   canReview = false;
   ratings: { [employeeId: string]: number } = {};
+  showNotesInput: { [employeeId: string]: boolean } = {};
+  notes: { [employeeId: string]: string } = {};
 
   trackByEmployee(index: number, emp: EmployeePerformanceSummary): string {
     return emp.employeeId;
@@ -72,6 +75,21 @@ export class ManagerDashboardComponent implements OnInit {
     }
   }
 
+  toggleNotes(employeeId: string, event: Event) {
+    event.stopPropagation();
+    this.showNotesInput[employeeId] = !this.showNotesInput[employeeId];
+  }
+
+  saveNotes(employeeId: string, event: Event) {
+    event.stopPropagation();
+    this.showNotesInput[employeeId] = false;
+    const rating = this.ratings[employeeId] || 0;
+    this.service.quickRateEmployee(employeeId, rating, this.notes[employeeId]).subscribe({
+      next: () => console.log('Notes saved successfully'),
+      error: (err) => console.error('Failed to save notes', err)
+    });
+  }
+
   setRating(employeeId: string, rating: number, event: Event) {
     event.stopPropagation();
     this.ratings[employeeId] = rating;
@@ -85,7 +103,7 @@ export class ManagerDashboardComponent implements OnInit {
       }
     }
 
-    this.service.quickRateEmployee(employeeId, rating).subscribe({
+    this.service.quickRateEmployee(employeeId, rating, this.notes[employeeId]).subscribe({
       next: () => {
         console.log('Rating saved successfully');
       },
@@ -239,5 +257,18 @@ export class ManagerDashboardComponent implements OnInit {
   getPriorityLabel(priority: number): string {
     const map: any = { 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Critical' };
     return map[priority] || 'Medium';
+  }
+
+  scrollTo(sectionId: string): void {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      if (sectionId === 'team-members-section' && !this.isLeaderboardExpanded) {
+        this.isLeaderboardExpanded = true;
+      }
+      // Add a small delay to allow DOM to expand if needed
+      setTimeout(() => {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
   }
 }

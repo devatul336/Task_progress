@@ -47,10 +47,10 @@
 
   <!-- Kanban Board -->
   <div class="kanban-board" *ngIf="!loading">
-    <div class="kanban-column" *ngFor="let col of filteredColumns" [class]="col.colorClass">
+    <div class="kanban-column" *ngFor="let col of filteredColumns">
 
       <!-- Column Header -->
-      <div class="col-header">
+      <div class="col-header" [style.border-bottom-color]="col.colorClass">
         <div class="col-title">
           <span>{{ col.label }}</span>
           <span class="count-badge" *ngIf="col.tasks.length === col.totalCount">{{ col.totalCount }}</span>
@@ -113,6 +113,7 @@
                   {{ getTaskTypeIcon(task.taskType) }}
                 </mat-icon>
                 <span class="jira-key">TSK-{{ task.taskItemId }}</span>
+                <span class="overdue-badge" *ngIf="isOverdue(task)">OVERDUE</span>
               </div>
 
               <div class="mini-avatar" *ngIf="task.assignedToEmployeeName"

@@ -55,5 +55,12 @@ export const routes: Routes = [
       { path: '', loadComponent: () => import('./reviews/review-list/review-list.component').then(m => m.ReviewListComponent) },
     ]
   },
+  {
+    path: 'settings',
+    canActivate: [adminGuard],
+    children: [
+      { path: 'task-statuses', loadComponent: () => import('./settings/task-statuses/task-statuses.component').then(m => m.TaskStatusesComponent) }
+    ]
+  },
   { path: '**', redirectTo: 'dashboard/employee' }
 ];

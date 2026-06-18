@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,7 +18,8 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 import { AuthService } from '../../shared/auth.service';
-import { TaskItem } from '../../shared/models/interfaces';
+import { TaskStatusService } from '../../shared/task-status.service';
+import { TaskItem, TaskStatusMaster } from '../../shared/models/interfaces';
 
 interface KanbanColumn { id: number; label: string; icon: string; colorClass: string; tasks: TaskItem[]; }
 interface Assignee { id: string; name: string; initials: string; color: string; }
@@ -41,26 +42,59 @@ export class TaskBoardComponent implements OnInit {
   searchText = '';
   filterPriority = '';
   filterEmployee = '';
+  filterStatusCategory: number | null = null;
+  filterIsOverdue = false;
   
   uniqueAssignees: Assignee[] = [];
   selectedAssigneeIds: Set<string> = new Set();
 
-  columns: KanbanColumn[] = [
-    { id: 1, label: 'To Do', icon: 'radio_button_unchecked', colorClass: 'col-todo', tasks: [] },
-    { id: 2, label: 'In Progress', icon: 'pending', colorClass: 'col-progress', tasks: [] },
-    { id: 3, label: 'Under Review', icon: 'rate_review', colorClass: 'col-review', tasks: [] },
-    { id: 4, label: 'Completed', icon: 'check_circle', colorClass: 'col-done', tasks: [] },
-    { id: 5, label: 'On Hold', icon: 'pause_circle', colorClass: 'col-hold', tasks: [] }
-  ];
+  columns: KanbanColumn[] = [];
 
-  constructor(private service: ProgressTrackerService, private authService: AuthService) {}
+  constructor(
+    private service: ProgressTrackerService,
+    private authService: AuthService,
+    private statusService: TaskStatusService,
+    private route: ActivatedRoute
+  ) {}
 
   canEditTask = false;
   activeMenuId: number | null = null;
 
   ngOnInit(): void {
     this.canEditTask = this.authService.isAdminOrHR() || this.authService.isManager();
-    this.loadTasks();
+    this.statusService.ensureLoaded();
+    
+    this.route.queryParams.subscribe(params => {
+      if (params['statusCategory']) {
+        this.filterStatusCategory = Number(params['statusCategory']);
+      } else {
+        this.filterStatusCategory = null;
+      }
+      
+      this.filterIsOverdue = params['isOverdue'] === 'true';
+
+      this.statusService.statuses$.subscribe(statuses => {
+        if (statuses.length > 0) {
+          this.buildColumns(statuses);
+          this.loadTasks();
+        }
+      });
+    });
+  }
+
+  buildColumns(statuses: TaskStatusMaster[]) {
+    let activeStatuses = statuses.filter(s => s.isActive);
+    if (this.filterStatusCategory) {
+      activeStatuses = activeStatuses.filter(s => s.category === this.filterStatusCategory);
+    }
+    
+    this.columns = activeStatuses.map(s => ({
+      id: s.taskStatusId,
+      label: s.name,
+      icon: s.category === 5 ? 'check_circle' : (s.category === 2 ? 'pending' : 'radio_button_unchecked'),
+      colorClass: s.colorClass,
+      tasks: []
+    }));
   }
 
   toggleMenu(event: Event, taskId: number) {
@@ -128,7 +162,7 @@ export class TaskBoardComponent implements OnInit {
   distributeTasks(tasks: TaskItem[]): void {
     this.columns.forEach(col => col.tasks = []);
     tasks.forEach(task => {
-      if (task.taskType !== 1) { // Hide Epics from the Kanban board
+      if (task.taskType !== 1) { // Hide Epics from the Kanban board (Epic is 1)
         const col = this.columns.find(c => c.id === task.status);
         if (col) col.tasks.push(task);
       }
@@ -138,7 +172,8 @@ export class TaskBoardComponent implements OnInit {
   extractAssignees(tasks: TaskItem[]): void {
     const map = new Map<string, Assignee>();
     tasks.forEach(t => {
-      if (t.assignedToEmployeeId && t.assignedToEmployeeName) {
+      // Only extract assignees for tasks that are actually visible on the board (not Epics)
+      if (t.taskType !== 1 && t.assignedToEmployeeId && t.assignedToEmployeeName) {
         if (!map.has(t.assignedToEmployeeId)) {
           map.set(t.assignedToEmployeeId, {
             id: t.assignedToEmployeeId,
@@ -181,7 +216,7 @@ export class TaskBoardComponent implements OnInit {
   }
 
   get filteredColumns(): any[] {
-    if (!this.searchText && !this.filterPriority && !this.filterEmployee && this.selectedAssigneeIds.size === 0) {
+    if (!this.searchText && !this.filterPriority && !this.filterEmployee && this.selectedAssigneeIds.size === 0 && !this.filterIsOverdue) {
       return this.columns.map(col => ({ ...col, totalCount: col.tasks.length }));
     }
     return this.columns.map(col => ({
@@ -191,19 +226,23 @@ export class TaskBoardComponent implements OnInit {
         (!this.searchText || t.title.toLowerCase().includes(this.searchText.toLowerCase())) &&
         (!this.filterPriority || String(t.priority) === this.filterPriority) &&
         (!this.filterEmployee || t.assignedToEmployeeId.includes(this.filterEmployee)) &&
-        (this.selectedAssigneeIds.size === 0 || this.selectedAssigneeIds.has(t.assignedToEmployeeId))
+        (this.selectedAssigneeIds.size === 0 || this.selectedAssigneeIds.has(t.assignedToEmployeeId)) &&
+        (!this.filterIsOverdue || this.isOverdue(t))
       )
     }));
   }
 
   moveTask(task: TaskItem, newStatus: number): void {
     const oldStatus = task.status;
+    const newStatusMaster = this.statusService.getStatuses().find(s => s.taskStatusId === newStatus);
+    const isCompleted = newStatusMaster?.category === 5; // Completed category
+    
     const updateDto = {
       ...task,
       taskItemId: task.taskItemId,
       status: newStatus,
-      completionPercentage: newStatus === 4 ? 100 : task.completionPercentage,
-      completedDate: newStatus === 4 ? new Date().toISOString() : undefined,
+      completionPercentage: isCompleted ? 100 : task.completionPercentage,
+      completedDate: isCompleted ? new Date().toISOString() : undefined,
       statusChangeRemark: `Status changed from ${task.statusName} to ${this.columns.find(c => c.id === newStatus)?.label}`
     };
 
@@ -219,22 +258,22 @@ export class TaskBoardComponent implements OnInit {
 
   getTaskTypeColor(type: number): string {
     const map: Record<number, string> = { 
-      1: '#e5493a', // Bug (Red)
-      2: '#6554c0', // Epic (Purple)
-      3: '#36b37e', // Story (Green)
+      1: '#6554c0', // Epic (Purple)
+      2: '#36b37e', // Story (Green)
+      3: '#4c9aff', // Task (Blue)
       4: '#4c9aff', // Sub Task (Light Blue)
-      5: '#4c9aff'  // Task (Blue)
+      5: '#e5493a'  // Bug (Red)
     };
     return map[type] || '#4c9aff';
   }
 
   getTaskTypeIcon(type: number): string {
     const map: Record<number, string> = {
-      1: 'bug_report',
-      2: 'flash_on',
-      3: 'bookmark',
-      4: 'subdirectory_arrow_right',
-      5: 'check_box'
+      1: 'flash_on',                 // Epic
+      2: 'bookmark',                 // Story
+      3: 'check_box',                // Task
+      4: 'subdirectory_arrow_right', // Sub Task
+      5: 'bug_report'                // Bug
     };
     return map[type] || 'check_box';
   }
@@ -247,7 +286,17 @@ export class TaskBoardComponent implements OnInit {
   }
 
   isOverdue(task: TaskItem): boolean {
-    return task.status !== 4 && task.status !== 6 && new Date(task.dueDate) < new Date();
+    if (!task.dueDate) return false;
+    const statusMaster = this.statusService.getStatuses().find(s => s.taskStatusId === task.status);
+    const isCompletedOrHold = statusMaster?.category === 5 || statusMaster?.category === 6;
+    if (isCompletedOrHold) return false;
+
+    const due = new Date(task.dueDate);
+    due.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return due < today;
   }
 
   logClick(event: any, task: any) {

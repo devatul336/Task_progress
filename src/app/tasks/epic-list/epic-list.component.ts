@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Directive, ElementRef } from '@angular/core';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -11,12 +11,23 @@ import { FormsModule } from '@angular/forms';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 import { TaskItem } from '../../shared/models/interfaces';
 
+@Directive({
+  selector: '[appAutoFocus]',
+  standalone: true
+})
+export class AutoFocusDirective implements OnInit {
+  constructor(private el: ElementRef) {}
+  ngOnInit() {
+    setTimeout(() => this.el.nativeElement.focus(), 0);
+  }
+}
+
 @Component({
   selector: 'app-epic-list',
   standalone: true,
   imports: [
     CommonModule, RouterModule, MatIconModule, MatButtonModule,
-    MatTableModule, MatProgressBarModule, MatChipsModule, FormsModule
+    MatTableModule, MatProgressBarModule, MatChipsModule, FormsModule, AutoFocusDirective
   ],
   template: `
 <div class="page-container">
@@ -41,9 +52,13 @@ import { TaskItem } from '../../shared/models/interfaces';
       <ng-container matColumnDef="title">
         <th mat-header-cell *matHeaderCellDef> Title </th>
         <td mat-cell *matCellDef="let epic">
-          <div class="epic-title-cell">
+          <div class="epic-title-cell" (dblclick)="startEditTitle(epic, $event)">
             <mat-icon style="color: #6554c0; vertical-align: middle; margin-right: 8px;">flash_on</mat-icon>
-            <span class="epic-title-text">{{ epic.title }}</span>
+            <span class="epic-title-text" *ngIf="editingEpicId !== epic.taskItemId">{{ epic.title }}</span>
+            <input *ngIf="editingEpicId === epic.taskItemId" type="text" [(ngModel)]="epic.title" 
+                   (blur)="saveEpicTitle(epic)" (keyup.enter)="saveEpicTitle(epic)" 
+                   (click)="$event.stopPropagation()" appAutoFocus
+                   style="width: 200px; padding: 4px 8px; border: 2px solid #4C9AFF; border-radius: 3px; outline: none; font-size: 14px; font-family: inherit;">
           </div>
         </td>
       </ng-container>
@@ -116,9 +131,18 @@ import { TaskItem } from '../../shared/models/interfaces';
 
       <!-- Actions Column -->
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef style="width: 80px; text-align: right;"></th>
+        <th mat-header-cell *matHeaderCellDef style="text-align: right;"> Quick Actions </th>
         <td mat-cell *matCellDef="let epic" style="text-align: right;">
-          <button mat-button color="primary" [routerLink]="['/tasks', epic.taskItemId]" [queryParams]="{mode: 'edit'}">Edit</button>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; align-items: center;">
+            <button mat-stroked-button color="primary" class="quick-action-btn"
+                    *ngFor="let opt of getNextStatusOptions(epic.status)"
+                    (click)="changeEpicStatus(epic, opt.id, $event)">
+              {{ opt.label }}
+            </button>
+            <button mat-icon-button color="primary" [routerLink]="['/tasks', epic.taskItemId]" [queryParams]="{mode: 'edit'}" (click)="$event.stopPropagation()" matTooltip="Edit Epic">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </div>
         </td>
       </ng-container>
 
@@ -130,10 +154,11 @@ import { TaskItem } from '../../shared/models/interfaces';
               <div *ngIf="epic.children?.length === 0" class="empty-children">No stories or tasks mapped to this Epic yet.</div>
               <div *ngIf="epic.children?.length > 0" class="children-list">
                 <h4 style="margin: 0 0 12px 0; color: #172B4D; font-size: 14px;">Epic Items:</h4>
-                <div *ngFor="let child of epic.children" class="child-item">
-                  <mat-icon [style.color]="child.taskType === 2 ? '#36B37E' : '#4C9AFF'" style="font-size: 18px; width: 18px; height: 18px;">
-                    {{ child.taskType === 2 ? 'bookmark' : 'check_box' }}
+                <div *ngFor="let child of epic.children" class="child-item" [style.margin-left.px]="child.level * 32">
+                  <mat-icon [style.color]="getTaskTypeColor(child.taskType)" style="font-size: 18px; width: 18px; height: 18px; margin-right: 4px;">
+                    {{ getTaskTypeIcon(child.taskType) }}
                   </mat-icon>
+                  <span style="font-size: 11px; color: #626F86; font-weight: 500; min-width: 65px; display: inline-block;">{{ getTaskTypeName(child.taskType) }}</span>
                   <a [routerLink]="['/tasks', child.taskItemId]" [queryParams]="{mode:'view'}" class="child-link" (click)="$event.stopPropagation()">{{ child.title }}</a>
                   <span class="child-status-badge" [ngClass]="getStatusClass(child.status)">{{ getStatusName(child.status) }}</span>
                   <div class="child-assignee">{{ child.assignedToEmployeeName || 'Unassigned' }}</div>
@@ -213,6 +238,8 @@ import { TaskItem } from '../../shared/models/interfaces';
 .child-link:hover { text-decoration: underline; color: #0065FF; }
 .child-status-badge { display: inline-block; padding: 2px 6px; font-size: 10px; }
 .child-assignee { width: 150px; font-size: 13px; color: #42526E; text-align: right; }
+
+.quick-action-btn { height: 28px; line-height: 26px; font-size: 12px; padding: 0 8px; border-radius: 4px; }
   `],
   animations: [
     trigger('detailExpand', [
@@ -228,6 +255,7 @@ export class EpicListComponent implements OnInit {
   loading = true;
   searchQuery = '';
   expandedElement: any | null = null;
+  editingEpicId: number | null = null;
   
   displayedColumns: string[] = ['title', 'status', 'priority', 'stories', 'tasks', 'progress', 'assignee', 'dueDate', 'actions'];
 
@@ -244,7 +272,17 @@ export class EpicListComponent implements OnInit {
         const allEpics = tasks.filter(t => t.taskType === 1);
         
         this.epics = allEpics.map(epic => {
-          const children = tasks.filter(t => t.parentTaskId === epic.taskItemId);
+          const getDescendants = (parentId: number, level: number): any[] => {
+            const directChildren = tasks.filter(t => t.parentTaskId === parentId);
+            let descendants: any[] = [];
+            for (const child of directChildren) {
+              descendants.push({ ...child, level });
+              descendants.push(...getDescendants(child.taskItemId, level + 1));
+            }
+            return descendants;
+          };
+
+          const children = getDescendants(epic.taskItemId, 0);
           const stories = children.filter(t => t.taskType === 2);
           const standardTasks = children.filter(t => t.taskType === 3);
           
@@ -324,5 +362,87 @@ export class EpicListComponent implements OnInit {
     if (priority === 3) return '#FF991F';
     if (priority === 1) return '#006644';
     return '#FF991F';
+  }
+
+  getTaskTypeColor(type: number): string {
+    const map: Record<number, string> = { 
+      1: '#6554c0', // Epic (Purple)
+      2: '#36b37e', // Story (Green)
+      3: '#4c9aff', // Task (Blue)
+      4: '#4c9aff', // Sub Task (Light Blue)
+      5: '#e5493a'  // Bug (Red)
+    };
+    return map[type] || '#4c9aff';
+  }
+
+  getTaskTypeIcon(type: number): string {
+    const map: Record<number, string> = {
+      1: 'flash_on',                 // Epic
+      2: 'bookmark',                 // Story
+      3: 'check_box',                // Task
+      4: 'subdirectory_arrow_right', // Sub Task
+      5: 'bug_report'                // Bug
+    };
+    return map[type] || 'check_box';
+  }
+
+  getTaskTypeName(type: number): string {
+    const map: Record<number, string> = {
+      1: 'Epic',
+      2: 'Story',
+      3: 'Task',
+      4: 'Sub-Task',
+      5: 'Bug'
+    };
+    return map[type] || 'Task';
+  }
+
+  getNextStatusOptions(status: number): {id: number, label: string}[] {
+    switch (status) {
+      case 1: return [{id: 2, label: 'Start Progress'}, {id: 5, label: 'Hold'}];
+      case 2: return [{id: 3, label: 'Review'}, {id: 5, label: 'Hold'}];
+      case 3: return [{id: 4, label: 'Approve'}, {id: 5, label: 'Hold'}];
+      case 5: return [{id: 1, label: 'To Do'}, {id: 2, label: 'Resume'}];
+      case 4: return [{id: 2, label: 'Reopen'}];
+      default: return [];
+    }
+  }
+
+  changeEpicStatus(epic: any, newStatus: number, event: Event): void {
+    event.stopPropagation();
+    
+    const updateDto = {
+      ...epic,
+      status: newStatus,
+      statusChangeRemark: `Status changed via quick action`
+    };
+
+    this.service.updateTask(updateDto).subscribe({
+      next: () => {
+        epic.status = newStatus;
+      },
+      error: (err) => {
+        console.error('Failed to change status:', err);
+      }
+    });
+  }
+
+  startEditTitle(epic: any, event: Event) {
+    event.stopPropagation();
+    this.editingEpicId = epic.taskItemId;
+  }
+
+  saveEpicTitle(epic: any) {
+    if (this.editingEpicId === null) return;
+    this.editingEpicId = null;
+    
+    this.service.updateTask(epic).subscribe({
+      next: () => {
+        // Title updated successfully
+      },
+      error: (err) => {
+        console.error('Failed to update title:', err);
+      }
+    });
   }
 }

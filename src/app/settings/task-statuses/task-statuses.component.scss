@@ -1,0 +1,152 @@
+.page-container { 
+  padding: 24px; 
+  background: #f8fafc; 
+  min-height: 100vh; 
+}
+
+.page-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 24px; 
+  
+  h1 { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-size: 1.75rem; 
+    font-weight: 700; 
+    color: #1e293b; 
+    margin: 0; 
+    mat-icon { color: #6366f1; } 
+  } 
+}
+
+.header-actions { 
+  display: flex; 
+  gap: 12px; 
+}
+
+.form-wrapper {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  max-width: 1000px;
+  margin: 0 auto 24px auto;
+  overflow: hidden;
+}
+
+.form-header-title {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+}
+
+.status-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 24px;
+}
+
+.w-full { 
+  width: 100%; 
+}
+
+.color-swatch-wrapper {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.color-swatch {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.hidden-color-picker {
+  opacity: 0;
+  width: 150%;
+  height: 150%;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.checkbox-wrapper {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.empty { 
+  text-align: center; 
+  color: #94a3b8; 
+  padding: 48px; 
+}
+
+/* Improve Table Layout */
+table.mat-table {
+  width: 100%;
+  border-spacing: 0;
+}
+
+.mat-column-displayOrder {
+  width: 80px;
+  text-align: center;
+}
+
+.mat-column-actions {
+  width: 100px;
+  padding-right: 24px !important;
+}
+
+th.mat-header-cell {
+  font-weight: 600;
+  color: #475569;
+  font-size: 14px;
+}
+
+.hover-row:hover {
+  background-color: #f1f5f9;
+}

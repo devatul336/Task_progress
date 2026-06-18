@@ -70,10 +70,10 @@
         </mat-card-header>
         <mat-card-content>
           <div class="task-stats">
-            <div class="stat-item todo"><span>{{ dashboard.todayTasks.toDo }}</span><label>To Do</label></div>
-            <div class="stat-item progress"><span>{{ dashboard.todayTasks.inProgress }}</span><label>In Progress</label></div>
-            <div class="stat-item done"><span>{{ dashboard.todayTasks.completed }}</span><label>Done</label></div>
-            <div class="stat-item overdue"><span>{{ dashboard.todayTasks.overdue }}</span><label>Overdue</label></div>
+            <div class="stat-item todo" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 1}" style="cursor: pointer;"><span>{{ dashboard.todayTasks.toDo }}</span><label>To Do</label></div>
+            <div class="stat-item progress" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 2}" style="cursor: pointer;"><span>{{ dashboard.todayTasks.inProgress }}</span><label>In Progress</label></div>
+            <div class="stat-item done" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 5}" style="cursor: pointer;"><span>{{ dashboard.todayTasks.completed }}</span><label>Done</label></div>
+            <div class="stat-item overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true}" style="cursor: pointer;"><span>{{ dashboard.todayTasks.overdue }}</span><label>Overdue</label></div>
           </div>
           <mat-progress-bar mode="determinate" [value]="dashboard.todayTasks.completionRate" color="primary" class="completion-bar"></mat-progress-bar>
           <p class="completion-text">{{ dashboard.todayTasks.completionRate | number:'1.0-1' }}% complete</p>
@@ -88,10 +88,10 @@
         </mat-card-header>
         <mat-card-content>
           <div class="task-stats">
-            <div class="stat-item todo"><span>{{ dashboard.weekTasks.toDo }}</span><label>To Do</label></div>
-            <div class="stat-item progress"><span>{{ dashboard.weekTasks.inProgress }}</span><label>In Progress</label></div>
-            <div class="stat-item done"><span>{{ dashboard.weekTasks.completed }}</span><label>Done</label></div>
-            <div class="stat-item overdue"><span>{{ dashboard.weekTasks.overdue }}</span><label>Overdue</label></div>
+            <div class="stat-item todo" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 1}" style="cursor: pointer;"><span>{{ dashboard.weekTasks.toDo }}</span><label>To Do</label></div>
+            <div class="stat-item progress" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 2}" style="cursor: pointer;"><span>{{ dashboard.weekTasks.inProgress }}</span><label>In Progress</label></div>
+            <div class="stat-item done" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 5}" style="cursor: pointer;"><span>{{ dashboard.weekTasks.completed }}</span><label>Done</label></div>
+            <div class="stat-item overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true}" style="cursor: pointer;"><span>{{ dashboard.weekTasks.overdue }}</span><label>Overdue</label></div>
           </div>
           <mat-progress-bar mode="determinate" [value]="dashboard.weekTasks.completionRate" color="accent" class="completion-bar"></mat-progress-bar>
           <p class="completion-text">{{ dashboard.weekTasks.completionRate | number:'1.0-1' }}% complete</p>
@@ -106,10 +106,10 @@
         </mat-card-header>
         <mat-card-content>
           <div class="task-stats">
-            <div class="stat-item todo"><span>{{ dashboard.monthTasks.toDo }}</span><label>To Do</label></div>
-            <div class="stat-item progress"><span>{{ dashboard.monthTasks.inProgress }}</span><label>In Progress</label></div>
-            <div class="stat-item done"><span>{{ dashboard.monthTasks.completed }}</span><label>Done</label></div>
-            <div class="stat-item overdue"><span>{{ dashboard.monthTasks.overdue }}</span><label>Overdue</label></div>
+            <div class="stat-item todo" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 1}" style="cursor: pointer;"><span>{{ dashboard.monthTasks.toDo }}</span><label>To Do</label></div>
+            <div class="stat-item progress" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 2}" style="cursor: pointer;"><span>{{ dashboard.monthTasks.inProgress }}</span><label>In Progress</label></div>
+            <div class="stat-item done" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 5}" style="cursor: pointer;"><span>{{ dashboard.monthTasks.completed }}</span><label>Done</label></div>
+            <div class="stat-item overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true}" style="cursor: pointer;"><span>{{ dashboard.monthTasks.overdue }}</span><label>Overdue</label></div>
           </div>
           <mat-progress-bar mode="determinate" [value]="dashboard.monthTasks.completionRate" color="warn" class="completion-bar"></mat-progress-bar>
           <p class="completion-text">{{ dashboard.monthTasks.completionRate | number:'1.0-1' }}% complete</p>

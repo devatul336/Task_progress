@@ -217,8 +217,9 @@ export class ProgressTrackerService {
     return this.http.post<any>(`${this.baseUrl}/Review/${reviewId}/acknowledge`, JSON.stringify(comments), { headers });
   }
 
-  quickRateEmployee(employeeId: string, rating: number): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/Review/quick-rate/${employeeId}?rating=${rating}`, {});
+  quickRateEmployee(employeeId: string, rating: number, notes?: string): Observable<any> {
+    const payload = { notes: notes || '' };
+    return this.http.post<any>(`${this.baseUrl}/Review/quick-rate/${employeeId}?rating=${rating}`, payload);
   }
 
   // Dashboards

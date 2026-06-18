@@ -25,7 +25,7 @@
 
     <!-- Metric Cards -->
     <div class="metrics-grid">
-      <div class="metric-card blue">
+      <div class="metric-card blue" (click)="scrollTo('team-members-section')" style="cursor: pointer;" matTooltip="View Team Members">
         <mat-icon>people</mat-icon>
         <span class="metric-value">{{ dashboard.totalTeamMembers }}</span>
         <span class="metric-label">Team Members</span>
@@ -35,17 +35,17 @@
         <span class="metric-value">{{ dashboard.teamTaskSummary.completionRate | number:'1.0-1' }}%</span>
         <span class="metric-label">Team Completion Rate</span>
       </div>
-      <div class="metric-card purple">
+      <div class="metric-card purple" (click)="scrollTo('active-projects-section')" style="cursor: pointer;" matTooltip="View Active Projects">
         <mat-icon>account_tree</mat-icon>
         <span class="metric-value">{{ dashboard.activeProjects }}</span>
         <span class="metric-label">Active Projects</span>
       </div>
-      <div class="metric-card orange" *ngIf="dashboard.teamTaskSummary.overdue > 0">
+      <div class="metric-card orange" *ngIf="dashboard.teamTaskSummary.overdue > 0" (click)="scrollTo('overdue-tasks-section')" style="cursor: pointer;" matTooltip="View Overdue Tasks">
         <mat-icon>warning</mat-icon>
         <span class="metric-value">{{ dashboard.teamTaskSummary.overdue }}</span>
         <span class="metric-label">Overdue Tasks</span>
       </div>
-      <div class="metric-card green" *ngIf="dashboard.teamTaskSummary.overdue === 0">
+      <div class="metric-card green" *ngIf="dashboard.teamTaskSummary.overdue === 0" (click)="scrollTo('overdue-tasks-section')" style="cursor: pointer;" matTooltip="View Overdue Tasks">
         <mat-icon>check_circle</mat-icon>
         <span class="metric-value">0</span>
         <span class="metric-label">Overdue Tasks</span>
@@ -66,15 +66,15 @@
       </mat-card-header>
       <mat-card-content>
         <div class="summary-grid">
-          <div class="s-item s-todo"><span>{{ dashboard.teamTaskSummary.toDo }}</span><label>To Do</label></div>
-          <div class="s-item s-progress"><span>{{ dashboard.teamTaskSummary.inProgress }}</span><label>In
+          <div class="s-item s-todo" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 1}" style="cursor: pointer;" matTooltip="View To Do Tasks"><span>{{ dashboard.teamTaskSummary.toDo }}</span><label>To Do</label></div>
+          <div class="s-item s-progress" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 2}" style="cursor: pointer;" matTooltip="View In Progress Tasks"><span>{{ dashboard.teamTaskSummary.inProgress }}</span><label>In
               Progress</label></div>
-          <div class="s-item s-review"><span>{{ dashboard.teamTaskSummary.underReview }}</span><label>In Review</label>
+          <div class="s-item s-review" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 3}" style="cursor: pointer;" matTooltip="View In Review Tasks"><span>{{ dashboard.teamTaskSummary.underReview }}</span><label>In Review</label>
           </div>
-          <div class="s-item s-done"><span>{{ dashboard.teamTaskSummary.completed }}</span><label>Completed</label>
+          <div class="s-item s-done" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 5}" style="cursor: pointer;" matTooltip="View Completed Tasks"><span>{{ dashboard.teamTaskSummary.completed }}</span><label>Completed</label>
           </div>
-          <div class="s-item s-hold"><span>{{ dashboard.teamTaskSummary.onHold }}</span><label>On Hold</label></div>
-          <div class="s-item s-overdue"><span>{{ dashboard.teamTaskSummary.overdue }}</span><label>Overdue</label></div>
+          <div class="s-item s-hold" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 6}" style="cursor: pointer;" matTooltip="View On Hold Tasks"><span>{{ dashboard.teamTaskSummary.onHold }}</span><label>On Hold</label></div>
+          <div class="s-item s-overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true}" style="cursor: pointer;" matTooltip="View Overdue Tasks"><span>{{ dashboard.teamTaskSummary.overdue }}</span><label>Overdue</label></div>
         </div>
         <mat-progress-bar mode="determinate" [value]="dashboard.teamTaskSummary.completionRate" color="primary"
           class="big-bar"></mat-progress-bar>
@@ -110,7 +110,7 @@
     </div>
 
     <!-- Performance Table -->
-    <mat-card class="perf-table-card">
+    <mat-card class="perf-table-card" id="team-members-section">
       <div class="leaderboard-header" (click)="isLeaderboardExpanded = !isLeaderboardExpanded"
         style="cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 16px;">
         <mat-icon style="color: #f59e0b;">emoji_events</mat-icon>
@@ -191,14 +191,27 @@
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef> Review Rating </th>
+                <th mat-header-cell *matHeaderCellDef> Review Rating & Notes </th>
                 <td mat-cell *matCellDef="let emp">
-                  <div class="star-rating" *ngIf="canReview" (click)="$event.stopPropagation()" style="display: flex; align-items: center;">
-                    <mat-icon *ngFor="let star of [1,2,3,4,5]" 
-                              (click)="setRating(emp.employeeId, star, $event)"
-                              style="cursor: pointer; color: #f59e0b; width: 20px; height: 20px; font-size: 20px;">
-                      {{ (ratings[emp.employeeId] || 0) >= star ? 'star' : 'star_border' }}
-                    </mat-icon>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <div class="star-rating" *ngIf="canReview" (click)="$event.stopPropagation()" style="display: flex; align-items: center;">
+                        <mat-icon *ngFor="let star of [1,2,3,4,5]" 
+                                  (click)="setRating(emp.employeeId, star, $event)"
+                                  style="cursor: pointer; color: #f59e0b; width: 20px; height: 20px; font-size: 20px;">
+                          {{ (ratings[emp.employeeId] || 0) >= star ? 'star' : 'star_border' }}
+                        </mat-icon>
+                      </div>
+                      <button mat-icon-button color="primary" *ngIf="canReview" (click)="toggleNotes(emp.employeeId, $event)" matTooltip="Add Notes" style="transform: scale(0.9);">
+                        <mat-icon>edit_note</mat-icon>
+                      </button>
+                    </div>
+                    <div *ngIf="showNotesInput[emp.employeeId]" (click)="$event.stopPropagation()" style="display: flex; align-items: center; gap: 4px; margin-top: 4px;">
+                       <textarea matInput [(ngModel)]="notes[emp.employeeId]" placeholder="Type notes..." style="width: 140px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; outline: none;" rows="1"></textarea>
+                       <button mat-icon-button color="accent" (click)="saveNotes(emp.employeeId, $event)" style="transform: scale(0.8);" matTooltip="Save Notes">
+                         <mat-icon>save</mat-icon>
+                       </button>
+                    </div>
                   </div>
                 </td>
               </ng-container>
@@ -260,7 +273,7 @@
 
     <!-- Projects & Milestones -->
     <div class="bottom-row">
-      <mat-card class="projects-card">
+      <mat-card class="projects-card" id="active-projects-section">
         <mat-card-header>
           <mat-icon mat-card-avatar>account_tree</mat-icon>
           <mat-card-title>Active Projects</mat-card-title>
@@ -282,7 +295,7 @@
         </mat-card-content>
       </mat-card>
 
-      <mat-card class="overdue-tasks-card">
+      <mat-card class="overdue-tasks-card" id="overdue-tasks-section">
         <mat-card-header>
           <mat-icon mat-card-avatar class="warn-icon">warning</mat-icon>
           <mat-card-title>Team Overdue Tasks</mat-card-title>

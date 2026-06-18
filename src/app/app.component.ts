@@ -54,6 +54,12 @@ export class AppComponent implements OnInit {
         { label: 'Goals', icon: 'emoji_events', route: '/goals' },
         { label: 'Reviews', icon: 'star_rate', route: '/reviews' },
       ]
+    },
+    {
+      label: 'Settings',
+      items: [
+        { label: 'Task Statuses', icon: 'settings', route: '/settings/task-statuses' }
+      ]
     }
   ];
 
@@ -267,7 +273,8 @@ export class AppComponent implements OnInit {
 
         // List of routes restricted to ONLY Admin/HR
         const adminRoutes = [
-          '/dashboard/organization'
+          '/dashboard/organization',
+          '/settings/task-statuses'
         ];
 
         // List of routes restricted to Manager AND Admin/HR

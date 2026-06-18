@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewChecked, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Location } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
@@ -8,6 +8,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 import { AuthService } from '../../shared/auth.service';
+import { TaskStatusService } from '../../shared/task-status.service';
 import { AddUpdateFormComponent, FormConfig, FormColumn } from '@fovestta2/web-angular';
 import { FormGroup, FormsModule } from '@angular/forms';
 import { combineLatest } from 'rxjs';
@@ -403,12 +404,13 @@ import { QuillModule } from 'ngx-quill';
 }
   `]
 })
-export class TaskFormComponent implements OnInit {
+export class TaskFormComponent implements OnInit, AfterViewChecked {
   @ViewChild(AddUpdateFormComponent) formComponent!: AddUpdateFormComponent;
 
   taskFormConfig!: FormConfig;
   isEdit = false;
   taskId?: number;
+  initialDueDate: string | null = null;
   employees: any[] = [];
   projects: any[] = [];
   milestones: any[] = [];
@@ -450,11 +452,37 @@ export class TaskFormComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private authService: AuthService,
-    private location: Location
+    private location: Location,
+    private statusService: TaskStatusService
   ) { }
 
   goBack(): void {
     this.location.back();
+  }
+
+  ngAfterViewChecked(): void {
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    if (dateInputs.length > 0) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      let minDateStr = `${yyyy}-${mm}-${dd}`;
+
+      // If editing and the original date is in the past, allow up to that date 
+      // so the form doesn't become natively invalid on load
+      if (this.isEdit && this.initialDueDate) {
+        if (this.initialDueDate < minDateStr) {
+          minDateStr = this.initialDueDate.split('T')[0];
+        }
+      }
+
+      dateInputs.forEach(input => {
+        if (input.getAttribute('min') !== minDateStr) {
+          input.setAttribute('min', minDateStr);
+        }
+      });
+    }
   }
 
   getTaskTypeName(): string {
@@ -464,6 +492,7 @@ export class TaskFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.canEditTask = this.authService.isAdminOrHR() || this.authService.isManager();
+    this.statusService.ensureLoaded();
 
     let empsLoaded = false;
     let projsLoaded = false;
@@ -588,6 +617,9 @@ export class TaskFormComponent implements OnInit {
     this.descriptionText = initialData.description || '';
     this.acceptanceCriteriaText = initialData.acceptanceCriteria || '';
     this.attachmentUrl = initialData.attachmentUrl || '';
+    if (initialData.dueDate) {
+      this.initialDueDate = initialData.dueDate.split('T')[0];
+    }
 
     const fields: FormColumn[] = [
       {
@@ -668,7 +700,8 @@ export class TaskFormComponent implements OnInit {
           ...(initialData.taskType === 1 ? [] : (initialData.taskType === 3 ? this.stories : (initialData.taskType === 4 ? this.parentTasks : this.epics))).map(t => ({ label: t.title, value: t.taskItemId }))
         ],
         value: initialData.parentTaskId,
-        disabled: this.isViewOnly
+        disabled: this.isViewOnly,
+        hidden: initialData.taskType === 1
       },
       {
         name: 'assignedToEmployeeId',
@@ -688,8 +721,27 @@ export class TaskFormComponent implements OnInit {
         label: 'Due Date',
         type: 'date',
         value: initialData.dueDate,
-        validations: [{ type: 'required', message: 'Due date is required' }],
-        disabled: this.isViewOnly || this.isEdit,
+        validations: [
+          { type: 'required', message: 'Due date is required' },
+          {
+            type: 'custom' as any,
+            message: 'Due date cannot be in the past',
+            validator: (value: any) => {
+              if (!value) return true;
+              const selectedDate = new Date(value);
+              selectedDate.setHours(0, 0, 0, 0);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              
+              if (this.isEdit && value === initialData.dueDate) {
+                return true;
+              }
+              
+              return selectedDate >= today;
+            }
+          }
+        ],
+        disabled: this.isViewOnly,
         onChange: (value: any, formGroup: FormGroup) => {
           if (value) {
             const selectedDate = new Date(value);
@@ -729,13 +781,10 @@ export class TaskFormComponent implements OnInit {
           name: 'status',
           label: 'Status',
           type: 'select',
-          options: [
-            { label: 'To Do', value: 1 },
-            { label: 'In Progress', value: 2 },
-            { label: 'Under Review', value: 3 },
-            { label: 'Completed', value: 4 },
-            { label: 'On Hold', value: 5 }
-          ],
+          options: this.statusService.getStatuses().filter(s => s.isActive).map(s => ({
+            label: s.name,
+            value: s.taskStatusId
+          })),
           value: initialData.status,
           disabled: this.isViewOnly
         }
@@ -829,28 +878,31 @@ export class TaskFormComponent implements OnInit {
     
     const parentTaskCol = this.taskFormConfig.sections[0].fields.find((c: any) => c.name === 'parentTaskId');
     if (parentTaskCol) {
-      parentTaskCol.hidden = false;
       let optionsList: any[] = [];
       if (taskType === 1) {
         // Epic
+        parentTaskCol.hidden = true;
         parentTaskCol.label = 'Link to Parent (Optional)';
         parentTaskCol.options = [{ label: 'None', value: null }];
         formGroup.patchValue({ parentTaskId: null });
-      } else if (taskType === 3) {
-        // Task -> Links to Story
-        parentTaskCol.label = 'Link to Story (Optional)';
-        optionsList = this.stories;
-        parentTaskCol.options = [
-          { label: 'None', value: null },
-          ...optionsList.map((t: any) => ({ label: t.title, value: t.taskItemId }))
-        ];
       } else {
-        parentTaskCol.label = taskType === 4 ? 'Link to Parent Task (Optional)' : 'Link to Epic (Optional)';
-        optionsList = taskType === 4 ? this.parentTasks : this.epics;
-        parentTaskCol.options = [
-          { label: 'None', value: null },
-          ...optionsList.map((t: any) => ({ label: t.title, value: t.taskItemId }))
-        ];
+        parentTaskCol.hidden = false;
+        if (taskType === 3) {
+          // Task -> Links to Story
+          parentTaskCol.label = 'Link to Story (Optional)';
+          optionsList = this.stories;
+          parentTaskCol.options = [
+            { label: 'None', value: null },
+            ...optionsList.map((t: any) => ({ label: t.title, value: t.taskItemId }))
+          ];
+        } else {
+          parentTaskCol.label = taskType === 4 ? 'Link to Parent Task (Optional)' : 'Link to Epic (Optional)';
+          optionsList = taskType === 4 ? this.parentTasks : this.epics;
+          parentTaskCol.options = [
+            { label: 'None', value: null },
+            ...optionsList.map((t: any) => ({ label: t.title, value: t.taskItemId }))
+          ];
+        }
       }
       
       // If current value is not in options, clear it
