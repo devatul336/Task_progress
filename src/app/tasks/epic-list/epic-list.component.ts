@@ -9,6 +9,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { FormsModule } from '@angular/forms';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
+import { TaskStatusService } from '../../shared/task-status.service';
 import { TaskItem } from '../../shared/models/interfaces';
 
 @Directive({
@@ -190,24 +191,24 @@ export class AutoFocusDirective implements OnInit {
 </div>
   `,
   styles: [`
-.page-container { padding: 32px 40px; background: #FFFFFF; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+.page-container { padding: 32px 40px; background: var(--bg-color, #FFFFFF); color: var(--text-color, #172B4D); min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; transition: background-color 0.3s, color 0.3s; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.page-header h1 { font-size: 24px; font-weight: 500; color: #172B4D; margin: 0; line-height: 28px; }
+.page-header h1 { font-size: 24px; font-weight: 500; color: var(--text-color, #172B4D); margin: 0; line-height: 28px; }
 .jira-btn-primary { background-color: #0052CC !important; color: white !important; font-weight: 500; box-shadow: none !important; border-radius: 3px; height: 32px; padding: 0 12px; font-size: 14px; line-height: 32px; }
 .jira-btn-primary:hover { background-color: #0065FF !important; }
 
 .filters-row { margin-bottom: 16px; display: flex; gap: 16px; }
 .search-box { position: relative; width: 220px; }
-.search-box input { width: 100%; height: 36px; border: 2px solid #DFE1E6; border-radius: 3px; padding: 0 8px 0 32px; font-size: 14px; color: #172B4D; transition: background-color 0.2s, border-color 0.2s; background: #FAFBFC; box-sizing: border-box; }
-.search-box input:hover { background: #EBECF0; border-color: #DFE1E6; }
-.search-box input:focus { background: #FFFFFF; border-color: #4C9AFF; outline: none; }
+.search-box input { width: 100%; height: 36px; border: 2px solid var(--border-color, #DFE1E6); border-radius: 3px; padding: 0 8px 0 32px; font-size: 14px; color: var(--text-color, #172B4D); transition: background-color 0.2s, border-color 0.2s; background: var(--hover-color, #FAFBFC); box-sizing: border-box; }
+.search-box input:hover { background: var(--border-color, #EBECF0); border-color: var(--border-color, #DFE1E6); }
+.search-box input:focus { background: var(--surface-color, #FFFFFF); border-color: #4C9AFF; outline: none; }
 .search-box mat-icon { position: absolute; left: 8px; top: 8px; font-size: 20px; color: #626F86; pointer-events: none; }
 
-.table-container { border: none; overflow-x: auto; }
-.jira-table { width: 100%; box-shadow: none; border-collapse: separate; border-spacing: 0; }
-.jira-table th.mat-header-cell { color: #626F86; font-size: 12px; font-weight: 600; text-transform: none; border-bottom: 2px solid #DFE1E6; padding: 12px 16px; background: white; }
-.jira-table td.mat-cell { color: #172B4D; font-size: 14px; border-bottom: 1px solid #DFE1E6; padding: 12px 16px; transition: background-color 0.1s; }
-.jira-row:hover td { background-color: #F4F5F7; }
+.table-container { border: 1px solid var(--border-color, #DFE1E6); border-radius: 4px; overflow-x: auto; background: var(--surface-color, white); }
+.jira-table { width: 100%; box-shadow: none; border-collapse: separate; border-spacing: 0; background: transparent; }
+.jira-table th.mat-header-cell { color: #626F86; font-size: 12px; font-weight: 600; text-transform: none; border-bottom: 2px solid var(--border-color, #DFE1E6); padding: 12px 16px; background: var(--hover-color, #FAFBFC); }
+.jira-table td.mat-cell { color: var(--text-color, #172B4D); font-size: 14px; border-bottom: 1px solid var(--border-color, #DFE1E6); padding: 12px 16px; transition: background-color 0.1s; }
+.jira-row:hover td { background-color: var(--hover-color, #F4F5F7); }
 
 .epic-title-cell { display: flex; align-items: center; cursor: pointer; text-decoration: none; }
 .epic-title-text { color: #0052CC; font-weight: 500; font-size: 14px; }
@@ -219,25 +220,26 @@ export class AutoFocusDirective implements OnInit {
 .empty-cell { text-align: center; padding: 48px !important; border-bottom: none !important; }
 .empty-state { color: #626F86; font-size: 14px; }
 
-.status-todo { background-color: #DFE1E6; color: #42526E; font-weight: 600; font-size: 11px; text-transform: uppercase; border-radius: 3px; padding: 2px 4px; min-height: 20px; }
-.status-progress { background-color: #DEEBFF; color: #0052CC; font-weight: 600; font-size: 11px; text-transform: uppercase; border-radius: 3px; padding: 2px 4px; min-height: 20px; }
-.status-done { background-color: #E3FCEF; color: #006644; font-weight: 600; font-size: 11px; text-transform: uppercase; border-radius: 3px; padding: 2px 4px; min-height: 20px; }
+.status-todo { background-color: #DFE1E6; color: #42526E; font-weight: 700; font-size: 11px; text-transform: uppercase; border-radius: 3px; padding: 2px 4px; min-height: 20px; }
+.status-progress { background-color: #0052CC; color: #FFFFFF; font-weight: 700; font-size: 11px; text-transform: uppercase; border-radius: 3px; padding: 2px 4px; min-height: 20px; }
+.status-done { background-color: #00875A; color: #FFFFFF; font-weight: 700; font-size: 11px; text-transform: uppercase; border-radius: 3px; padding: 2px 4px; min-height: 20px; }
+.status-hold { background-color: #FF991F; color: #172B4D; font-weight: 700; font-size: 11px; text-transform: uppercase; border-radius: 3px; padding: 2px 4px; min-height: 20px; }
 
 /* Expandable Rows Styles */
 .epic-element-row { cursor: pointer; }
-.epic-element-row:hover td { background-color: #F4F5F7; }
+.epic-element-row:hover td { background-color: var(--hover-color, #F4F5F7); }
 .epic-expanded-row td { border-bottom-color: transparent !important; }
 .epic-detail-row { height: 0; }
 .epic-detail-wrapper { overflow: hidden; display: flex; flex-direction: column; }
-.epic-detail-inner { padding: 16px 24px; background: #FAFBFC; border-bottom: 1px solid #DFE1E6; box-shadow: inset 0 3px 6px -6px rgba(0,0,0,0.1); }
+.epic-detail-inner { padding: 16px 24px; background: var(--hover-color, #FAFBFC); border-bottom: 1px solid var(--border-color, #DFE1E6); box-shadow: inset 0 3px 6px -6px rgba(0,0,0,0.1); }
 .empty-children { color: #626F86; font-size: 13px; font-style: italic; }
-.child-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: white; border: 1px solid #DFE1E6; border-radius: 3px; margin-bottom: 8px; transition: box-shadow 0.2s; }
+.child-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--surface-color, white); border: 1px solid var(--border-color, #DFE1E6); border-radius: 3px; margin-bottom: 8px; transition: box-shadow 0.2s; }
 .child-item:hover { box-shadow: 0 1px 3px rgba(9, 30, 66, 0.13); }
 .child-item:last-child { margin-bottom: 0; }
 .child-link { flex: 1; color: #0052CC; text-decoration: none; font-size: 14px; font-weight: 500; }
 .child-link:hover { text-decoration: underline; color: #0065FF; }
 .child-status-badge { display: inline-block; padding: 2px 6px; font-size: 10px; }
-.child-assignee { width: 150px; font-size: 13px; color: #42526E; text-align: right; }
+.child-assignee { width: 150px; font-size: 13px; color: var(--text-color, #42526E); text-align: right; }
 
 .quick-action-btn { height: 28px; line-height: 26px; font-size: 12px; padding: 0 8px; border-radius: 4px; }
   `],
@@ -259,9 +261,13 @@ export class EpicListComponent implements OnInit {
   
   displayedColumns: string[] = ['title', 'status', 'priority', 'stories', 'tasks', 'progress', 'assignee', 'dueDate', 'actions'];
 
-  constructor(private service: ProgressTrackerService) {}
+  constructor(
+    private service: ProgressTrackerService,
+    private statusService: TaskStatusService
+  ) {}
 
   ngOnInit(): void {
+    this.statusService.ensureLoaded();
     this.loadEpics();
   }
 
@@ -335,13 +341,13 @@ export class EpicListComponent implements OnInit {
   }
 
   getStatusName(status: number): string {
-    const map: any = { 1: 'To Do', 2: 'In Progress', 3: 'Under Review', 4: 'Completed', 5: 'On Hold' };
-    return map[status] || 'Unknown';
+    return this.statusService.getStatusName(status) || 'Unknown';
   }
 
   getStatusClass(status: number): string {
     if (status === 1) return 'status-todo';
     if (status === 4) return 'status-done';
+    if (status === 5) return 'status-hold';
     return 'status-progress';
   }
 

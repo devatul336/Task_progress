@@ -36,6 +36,7 @@ export class TaskStatusesComponent implements OnInit {
       name: ['', Validators.required],
       category: [1, Validators.required],
       colorClass: ['#6366f1', Validators.required],
+      displayOrder: [1, Validators.required],
       isActive: [true]
     });
   }
@@ -60,10 +61,13 @@ export class TaskStatusesComponent implements OnInit {
     this.isEditing = true;
     this.editingId = null;
     
+    const nextOrder = this.statuses.length > 0 ? Math.max(...this.statuses.map(s => s.displayOrder)) + 1 : 1;
+    
     this.statusForm.patchValue({
       name: '',
       category: 1, // Default to To Do
       colorClass: '#6366f1',
+      displayOrder: nextOrder,
       isActive: true
     });
   }
@@ -75,6 +79,7 @@ export class TaskStatusesComponent implements OnInit {
       name: status.name,
       category: status.category,
       colorClass: status.colorClass,
+      displayOrder: status.displayOrder,
       isActive: status.isActive
     });
   }
@@ -89,13 +94,7 @@ export class TaskStatusesComponent implements OnInit {
     
     const data = this.statusForm.value;
 
-    // Auto-calculate Display Order
-    if (!this.editingId) {
-      data.displayOrder = this.statuses.length > 0 ? Math.max(...this.statuses.map(s => s.displayOrder)) + 1 : 1;
-    } else {
-      const existing = this.statuses.find(s => s.taskStatusId === this.editingId);
-      data.displayOrder = existing ? existing.displayOrder : 1;
-    }
+    // Removed auto-calculate Display Order as it's now manually entered
 
     if (this.editingId) {
       this.taskStatusService.updateStatus(this.editingId, data).subscribe(() => {

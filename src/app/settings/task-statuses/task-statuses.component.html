@@ -15,6 +15,13 @@
     
     <form [formGroup]="statusForm" (ngSubmit)="saveStatus()" class="status-form">
       <div class="form-grid">
+        <!-- Display Order -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Display Order (Priority)</mat-label>
+          <input matInput type="number" formControlName="displayOrder" placeholder="e.g. 1">
+          <mat-error *ngIf="statusForm.get('displayOrder')?.hasError('required')">Order is required</mat-error>
+        </mat-form-field>
+
         <!-- Status Name -->
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Status Name</mat-label>

@@ -8,15 +8,10 @@
     <div class="header-filters">
       <div class="jira-search-bar">
         <mat-icon class="search-icon">search</mat-icon>
-        <input type="text" [(ngModel)]="searchText" placeholder="Search tasks...">
-      </div>
-      
-      <div class="jira-search-bar" style="margin-left: 12px; width: 150px;">
-        <mat-icon class="search-icon">label</mat-icon>
-        <input type="text" [(ngModel)]="filterTag" placeholder="Filter by tag...">
+        <input type="text" [(ngModel)]="searchText" placeholder="Search board">
       </div>
 
-      <!-- Jira-style Avatar Filters -->
+      <!-- Assignee Avatars (Outside) -->
       <div class="jira-avatar-filters" *ngIf="uniqueAssignees.length > 0">
         <div class="avatar-group">
           <div class="filter-avatar" *ngFor="let assignee of uniqueAssignees" [matTooltip]="assignee.name"
@@ -25,25 +20,52 @@
             {{ assignee.initials }}
           </div>
         </div>
-        <button mat-raised-button color="primary" class="jira-create-btn" *ngIf="selectedAssigneeIds.size > 0"
-          (click)="clearAssigneeFilters()" style="margin-left: 8px;">Clear filters</button>
+        <mat-divider vertical class="header-divider" style="margin-left: 8px;"></mat-divider>
       </div>
-      <mat-divider vertical class="header-divider" *ngIf="uniqueAssignees.length > 0"></mat-divider>
-
-      <div class="jira-select-wrapper">
-        <select class="jira-select" [(ngModel)]="filterPriority">
-          <option value="">Priority: All</option>
-          <option value="4">Critical</option>
-          <option value="3">High</option>
-          <option value="2">Medium</option>
-          <option value="1">Low</option>
-        </select>
-        <mat-icon class="select-arrow">expand_more</mat-icon>
-      </div>
-
-      <button mat-raised-button color="primary" class="jira-create-btn" routerLink="/tasks/create">
-        <mat-icon>add</mat-icon> Add Task
+      
+      <!-- Filter Button -->
+      <button mat-flat-button class="jira-filter-btn" [matMenuTriggerFor]="filterMenu" [class.has-filters]="hasActiveFilters">
+        <div class="filter-btn-content">
+          <div class="filter-icon-badge">
+            <mat-icon>filter_list</mat-icon>
+            <span class="active-dot" *ngIf="hasActiveFilters"></span>
+          </div>
+          Filter <mat-icon>expand_more</mat-icon>
+        </div>
       </button>
+
+      <!-- Filter Dropdown -->
+      <mat-menu #filterMenu="matMenu" class="jira-filter-menu" xPosition="after">
+        <div class="menu-container" (click)="$event.stopPropagation()">
+          <h3 class="menu-section-title">FILTERS</h3>
+          <div class="menu-checkboxes">
+            <mat-checkbox [(ngModel)]="filterAssignedToMe" (change)="toggleAssignedToMe()">Assigned to me</mat-checkbox>
+            <mat-checkbox [(ngModel)]="filterIsOverdue">Due this week / Overdue</mat-checkbox>
+          </div>
+          
+          <mat-divider style="margin: 12px 0;"></mat-divider>
+          
+          <h3 class="menu-section-title">TAGS & PRIORITY</h3>
+          <div class="menu-inputs">
+            <div class="menu-input-wrapper">
+              <mat-icon>label</mat-icon>
+              <input type="text" [(ngModel)]="filterTag" placeholder="Filter by tag...">
+            </div>
+            <select class="menu-select" [(ngModel)]="filterPriority">
+              <option value="">Priority: All</option>
+              <option value="4">Critical</option>
+              <option value="3">High</option>
+              <option value="2">Medium</option>
+              <option value="1">Low</option>
+            </select>
+          </div>
+          
+          <div class="menu-actions" *ngIf="hasActiveFilters">
+            <button mat-button color="primary" (click)="clearAllFilters()">Clear filters</button>
+          </div>
+        </div>
+      </mat-menu>
+
     </div>
   </div>
 
@@ -55,12 +77,11 @@
     <div class="kanban-column" *ngFor="let col of filteredColumns">
 
       <!-- Column Header -->
-      <div class="col-header" [style.border-bottom-color]="col.colorClass">
+      <div class="col-header">
         <div class="col-title">
           <span>{{ col.label }}</span>
           <span class="count-badge" *ngIf="col.tasks.length === col.totalCount">{{ col.totalCount }}</span>
-          <span class="count-badge" *ngIf="col.tasks.length !== col.totalCount">{{ col.tasks.length }}/{{ col.totalCount
-            }}</span>
+          <span class="count-badge" *ngIf="col.tasks.length !== col.totalCount">{{ col.tasks.length }}/{{ col.totalCount }}</span>
         </div>
       </div>
 
@@ -119,10 +140,9 @@
             </div>
           </div>
         </div>
-
-        <div class="empty-col" *ngIf="!col.tasks.length">
-          <mat-icon>inbox</mat-icon>
-          <span>No tasks here</span>
+        <!-- Jira-style inline create button -->
+        <div class="jira-inline-create" routerLink="/tasks/create" [queryParams]="{statusId: col.id}">
+          <mat-icon>add</mat-icon> Create
         </div>
       </div>
 

@@ -9,10 +9,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AuthService } from './shared/auth.service';
 
 import { NotificationService } from './shared/notification.service';
 import { AppNotification } from './shared/models/interfaces';
+import { ProgressTrackerService } from './shared/progress-tracker.service';
+import { GlobalFilterService } from './shared/global-filter.service';
+import { ThemeService } from './shared/theme.service';
 
 interface NavItem { label: string; icon: string; route: string; badge?: number; }
 
@@ -22,7 +27,8 @@ interface NavItem { label: string; icon: string; route: string; badge?: number; 
   imports: [
     CommonModule, RouterOutlet, RouterModule, MatToolbarModule,
     MatSidenavModule, MatListModule, MatIconModule, MatButtonModule,
-    MatBadgeModule, MatTooltipModule, MatProgressBarModule
+    MatBadgeModule, MatTooltipModule, MatProgressBarModule, MatMenuModule,
+    MatCheckboxModule
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
@@ -83,13 +89,33 @@ export class AppComponent implements OnInit {
   showNotificationDropdown = false;
   unreadCount = 0;
   notifications: AppNotification[] = [];
+  
+  // Search state
+  employees: any[] = [];
+  filterSearchText = '';
+  filterTimeFrame: string | null = null;
+  filterEmployeeIds: string[] = [];
+  
+  isDarkTheme = false;
+  currentThemeMode = 'light';
 
   constructor(
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private trackerService: ProgressTrackerService,
+    private globalFilterService: GlobalFilterService,
+    public themeService: ThemeService
   ) { }
 
   ngOnInit() {
+    this.themeService.isDarkTheme$.subscribe(isDark => this.isDarkTheme = isDark);
+    this.themeService.currentMode$.subscribe(mode => this.currentThemeMode = mode);
+    
+    this.globalFilterService.filterState$.subscribe(state => {
+      this.filterSearchText = state.searchText;
+      this.filterTimeFrame = state.timeFrame;
+      this.filterEmployeeIds = state.employeeIds;
+    });
     // Check URL for token first (if opened in new tab from shell)
     const urlParams = new URLSearchParams(window.location.search);
     let tokenFromUrl = urlParams.get('token');
@@ -201,6 +227,32 @@ export class AppComponent implements OnInit {
     this.notificationService.unreadCount$.subscribe(count => this.unreadCount = count);
     this.notificationService.notifications$.subscribe(notifs => this.notifications = notifs);
     this.notificationService.startPolling();
+    
+    // Load employees for search dropdown
+    this.trackerService.getEmployees().subscribe(emps => {
+      this.employees = emps;
+    });
+  }
+
+  // Filter Methods
+  onSearchInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.globalFilterService.updateSearchText(input.value);
+  }
+
+  setTimeFrame(timeframe: string | null) {
+    this.globalFilterService.updateTimeFrame(timeframe);
+  }
+
+  toggleAssignee(employeeId: string) {
+    this.globalFilterService.toggleEmployee(employeeId);
+  }
+
+  getInitials(name: string): string {
+    if (!name) return '?';
+    const parts = name.trim().split(' ').filter(p => p.length > 0);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   }
 
   get userInitials(): string {

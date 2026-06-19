@@ -30,6 +30,116 @@
       <button mat-icon-button (click)="sidenavOpen = !sidenavOpen" class="menu-btn">
         <mat-icon>{{ sidenavOpen ? 'menu_open' : 'menu' }}</mat-icon>
       </button>
+      
+      <!-- Jira Global Nav Links -->
+      <div class="global-nav-links">
+        <button mat-button class="nav-link" [matMenuTriggerFor]="projectsMenu">
+          Projects <mat-icon>expand_more</mat-icon>
+        </button>
+        <mat-menu #projectsMenu="matMenu">
+          <button mat-menu-item routerLink="/projects">View all projects</button>
+        </mat-menu>
+        
+        <button mat-button class="nav-link" [matMenuTriggerFor]="listMenu">
+          List <mat-icon>expand_more</mat-icon>
+        </button>
+        <mat-menu #listMenu="matMenu">
+          <button mat-menu-item routerLink="/tasks/board">Board View</button>
+          <button mat-menu-item routerLink="/tasks/list">List View</button>
+        </mat-menu>
+        
+        <button mat-button class="nav-link" [matMenuTriggerFor]="dashboardsMenu">
+          Dashboards <mat-icon>expand_more</mat-icon>
+        </button>
+        <mat-menu #dashboardsMenu="matMenu">
+          <button mat-menu-item routerLink="/dashboard/employee">My Dashboard</button>
+          <button mat-menu-item routerLink="/dashboard/manager">Team Dashboard</button>
+          <button mat-menu-item routerLink="/dashboard/organization">Organization</button>
+        </mat-menu>
+      </div>
+
+      <!-- Jira Global Search Bar -->
+      <div class="global-search-bar" [matMenuTriggerFor]="searchMenu" #searchTrigger="matMenuTrigger">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input type="text" placeholder="Search Tracker" [value]="filterSearchText" (input)="onSearchInput($event)" (focus)="searchTrigger.openMenu()">
+      </div>
+
+      <mat-menu #searchMenu="matMenu" class="jira-global-search-menu" yPosition="below" [overlapTrigger]="false">
+        <div class="search-menu-container" (click)="$event.stopPropagation()">
+          <div class="search-layout">
+            <!-- Left Side: Recent items -->
+            <div class="search-left-panel">
+              <h3 class="search-section-title">RECENT BOARDS, PROJECTS AND FILTERS</h3>
+              <div class="search-recent-item" routerLink="/tasks/board">
+                <div class="search-item-icon project-icon">
+                  <mat-icon>domain</mat-icon>
+                </div>
+                <div class="search-item-text">
+                  <span>Current Project Board</span>
+                </div>
+              </div>
+              <div class="search-recent-item" routerLink="/tasks/list">
+                <div class="search-item-icon list-icon">
+                  <mat-icon>list_alt</mat-icon>
+                </div>
+                <div class="search-item-text">
+                  <span>Task List View</span>
+                </div>
+              </div>
+              
+              <div class="search-footer-links" style="visibility: hidden;">
+                <!-- Links removed as per user request -->
+              </div>
+            </div>
+            
+            <!-- Right Side: Advanced Filters -->
+            <div class="search-right-panel">
+              <h3 class="search-section-title">LAST UPDATED</h3>
+              <div class="filter-chips">
+                <span class="chip" [class.active]="filterTimeFrame === null" (click)="setTimeFrame(null)">Any time</span>
+                <span class="chip" [class.active]="filterTimeFrame === 'today'" (click)="setTimeFrame('today')">Today</span>
+                <span class="chip" [class.active]="filterTimeFrame === 'yesterday'" (click)="setTimeFrame('yesterday')">Yesterday</span>
+                <span class="chip" [class.active]="filterTimeFrame === 'past_7'" (click)="setTimeFrame('past_7')">Past 7 days</span>
+                <span class="chip" [class.active]="filterTimeFrame === 'past_30'" (click)="setTimeFrame('past_30')">Past 30 days</span>
+                <span class="chip" [class.active]="filterTimeFrame === 'past_year'" (click)="setTimeFrame('past_year')">Past year</span>
+              </div>
+              
+              <h3 class="search-section-title" style="margin-top: 16px;">FILTER BY PROJECT</h3>
+              <div class="search-checkbox-list">
+                <mat-checkbox>Current Project</mat-checkbox>
+              </div>
+              
+              <h3 class="search-section-title" style="margin-top: 16px;">FILTER BY ASSIGNEE</h3>
+              <div class="search-checkbox-list" style="max-height: 150px; overflow-y: auto;">
+                <mat-checkbox [checked]="filterEmployeeIds.includes('unassigned')" (change)="toggleAssignee('unassigned')">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="mini-avatar" style="background: #dfe1e6; color: #172b4d; width: 20px; height: 20px; font-size: 14px;">
+                      <mat-icon style="font-size: 14px; width: 14px; height: 14px;">person_outline</mat-icon>
+                    </div>
+                    Unassigned
+                  </div>
+                </mat-checkbox>
+                <mat-checkbox *ngFor="let emp of employees" 
+                  [checked]="filterEmployeeIds.includes(emp.employeeId)"
+                  (change)="toggleAssignee(emp.employeeId)">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="mini-avatar" style="background: #0052cc; color: white; width: 20px; height: 20px; font-size: 9px; line-height: 20px; text-align: center; border-radius: 50%;">
+                      {{ getInitials(emp.firstName + ' ' + emp.lastName) }}
+                    </div>
+                    {{ emp.firstName }} {{ emp.lastName }}
+                  </div>
+                </mat-checkbox>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-menu>
+
+      <!-- Jira Global Create Button -->
+      <button mat-flat-button color="primary" class="global-create-btn" routerLink="/tasks/create">
+        Create
+      </button>
+
       <span class="toolbar-spacer"></span>
 
       <div class="topbar-actions" style="display: flex; align-items: center; position: relative;">
@@ -64,8 +174,69 @@
             </div>
         </div>
 
+        <!-- Settings Dropdown Toggle -->
+        <button type="button" class="settings-menu-btn" [matMenuTriggerFor]="settingsMenu" style="background:none;border:none;cursor:pointer;padding:8px;margin-right:10px;display:flex;align-items:center;">
+          <mat-icon style="color: #666;">settings</mat-icon>
+        </button>
+
+        <mat-menu #settingsMenu="matMenu" class="settings-dropdown" xPosition="before">
+          <div style="padding: 16px; min-width: 450px;" (click)="$event.stopPropagation()">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: var(--text-color, #172b4d);">Theme</h3>
+            
+            <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+              <!-- Light Theme Card -->
+              <div class="theme-card" [class.selected]="currentThemeMode === 'light'" (click)="themeService.setThemeMode('light')">
+                <div class="radio-btn" [class.checked]="currentThemeMode === 'light'"></div>
+                <div class="theme-mockup light-mockup">
+                  <div class="mock-header"></div>
+                  <div class="mock-sidebar"></div>
+                  <div class="mock-content">
+                    <div class="mock-line" style="width: 40%;"></div>
+                    <div class="mock-line"></div>
+                    <div class="mock-line"></div>
+                    <div class="mock-line" style="width: 80%;"></div>
+                  </div>
+                </div>
+                <span class="theme-label">Light</span>
+              </div>
+
+              <!-- Dark Theme Card -->
+              <div class="theme-card" [class.selected]="currentThemeMode === 'dark'" (click)="themeService.setThemeMode('dark')">
+                <div class="radio-btn" [class.checked]="currentThemeMode === 'dark'"></div>
+                <div class="theme-mockup dark-mockup">
+                  <div class="mock-header"></div>
+                  <div class="mock-sidebar"></div>
+                  <div class="mock-content">
+                    <div class="mock-line" style="width: 40%;"></div>
+                    <div class="mock-line"></div>
+                    <div class="mock-line"></div>
+                    <div class="mock-line" style="width: 80%;"></div>
+                  </div>
+                </div>
+                <span class="theme-label">Dark</span>
+              </div>
+
+              <!-- Match Browser Card -->
+              <div class="theme-card" [class.selected]="currentThemeMode === 'system'" (click)="themeService.setThemeMode('system')">
+                <div class="radio-btn" [class.checked]="currentThemeMode === 'system'"></div>
+                <div class="theme-mockup system-mockup">
+                  <div class="mock-header"></div>
+                  <div class="mock-sidebar"></div>
+                  <div class="mock-content">
+                    <div class="mock-line" style="width: 40%;"></div>
+                    <div class="mock-line"></div>
+                    <div class="mock-line"></div>
+                    <div class="mock-line" style="width: 80%;"></div>
+                  </div>
+                </div>
+                <span class="theme-label">Match browser</span>
+              </div>
+            </div>
+          </div>
+        </mat-menu>
+
         <!-- User Dropdown Menu Toggle -->
-        <button type="button" class="user-profile" (click)="onUserClick($event)" style="background:none;border:none;cursor:pointer;padding:0;margin-left:15px;display:flex;align-items:center;gap:4px;">
+        <button type="button" class="user-profile" (click)="onUserClick($event)" style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;display:flex;align-items:center;gap:4px;">
             <div class="avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px;">
                 {{ userInitials }}
             </div>

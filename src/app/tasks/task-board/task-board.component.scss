@@ -4,9 +4,11 @@
 
 .board-container {
   padding: 24px;
-  background: #ffffff;
+  background: var(--bg-color, #ffffff);
+  color: var(--text-color, #1e293b);
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", Ubuntu, "Droid Sans", "Helvetica Neue", sans-serif;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 .board-header {
@@ -23,7 +25,7 @@
     gap: 8px;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--text-color, #1e293b);
     margin: 0;
   }
 
@@ -193,32 +195,31 @@
   padding: 12px;
   display: flex;
   flex-direction: column;
-  background: #f4f5f7;
+  background: var(--hover-color, #f4f5f7);
 }
 
 .col-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0 12px 0;
-  margin-bottom: 12px;
-  border-bottom: 2px solid transparent;
+  padding: 8px 0 12px 0;
+  margin-bottom: 4px;
 
   .col-title {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-weight: 600;
-    font-size: 0.75rem;
-    color: #5e6c84;
-    text-transform: uppercase;
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-color, #5e6c84);
+    text-transform: none;
   }
 }
 
 .count-badge {
   font-size: 0.75rem;
-  color: #172b4d;
-  background: #ebecf0;
+  color: #42526e;
+  background: #dfe1e6;
   padding: 2px 8px;
   border-radius: 12px;
   font-weight: 500;
@@ -233,7 +234,7 @@
 }
 
 .task-card {
-  background: white;
+  background: var(--surface-color, white);
   border-radius: 3px;
   box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
   display: flex;
@@ -243,7 +244,7 @@
   transition: background-color 0.1s;
 
   &:hover {
-    background-color: #f4f5f7;
+    background-color: var(--hover-color, #f4f5f7);
   }
 
   &.overdue-card {
@@ -381,5 +382,141 @@
 
   span {
     font-size: 0.85rem;
+  }
+}
+
+.jira-filter-btn {
+  background: #f4f5f7 !important;
+  color: #42526e !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 3px !important;
+  font-weight: 500 !important;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #ebecf0 !important;
+  }
+  
+  &.has-filters {
+    background: #e6effc !important;
+    color: #0052cc !important;
+  }
+
+  .filter-btn-content {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .filter-icon-badge {
+    position: relative;
+    display: flex;
+    align-items: center;
+    
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      line-height: 18px;
+    }
+    
+    .active-dot {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 8px;
+      height: 8px;
+      background: #ff5630;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+    }
+  }
+}
+
+.menu-container {
+  padding: 16px;
+  min-width: 260px;
+  
+  .menu-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #5e6c84;
+    text-transform: uppercase;
+    margin: 0 0 12px 0;
+  }
+  
+  .menu-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .menu-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    
+    .menu-input-wrapper {
+      position: relative;
+      mat-icon {
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        font-size: 16px;
+        color: #5e6c84;
+      }
+      input {
+        width: 100%;
+        height: 32px;
+        padding: 0 8px 0 32px;
+        border: 2px solid #dfe1e6;
+        border-radius: 3px;
+        outline: none;
+        box-sizing: border-box;
+        &:focus { border-color: #4c9aff; }
+      }
+    }
+    
+    .menu-select {
+      width: 100%;
+      height: 32px;
+      padding: 0 8px;
+      border: 2px solid #dfe1e6;
+      border-radius: 3px;
+      outline: none;
+      &:focus { border-color: #4c9aff; }
+    }
+  }
+  
+  .menu-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.jira-inline-create {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  margin-top: 8px;
+  color: #5e6c84;
+  font-size: 0.9rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+  
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  &:hover {
+    background: #ebecf0;
+    color: #172b4d;
   }
 }

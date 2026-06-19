@@ -16,9 +16,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 import { AuthService } from '../../shared/auth.service';
 import { TaskStatusService } from '../../shared/task-status.service';
+import { GlobalFilterService } from '../../shared/global-filter.service';
 import { TaskItem, TaskStatusMaster } from '../../shared/models/interfaces';
 
 interface KanbanColumn { id: number; label: string; icon: string; colorClass: string; tasks: TaskItem[]; }
@@ -31,7 +33,7 @@ interface Assignee { id: string; name: string; initials: string; color: string; 
     CommonModule, RouterModule, FormsModule, MatCardModule, MatIconModule,
     MatButtonModule, MatChipsModule, MatProgressBarModule, MatBadgeModule,
     MatSelectModule, MatFormFieldModule, MatInputModule, MatTooltipModule,
-    MatMenuModule, MatDialogModule, MatDividerModule
+    MatMenuModule, MatDialogModule, MatDividerModule, MatCheckboxModule
   ],
   templateUrl: './task-board.component.html',
   styleUrls: ['./task-board.component.scss']
@@ -48,9 +50,31 @@ export class TaskBoardComponent implements OnInit {
   queryEmployeeId: string | null = null;
   queryManagerId: string | null = null;
   filterTimeframe: string | null = null;
+  filterAssignedToMe = false;
   
   uniqueAssignees: Assignee[] = [];
   selectedAssigneeIds: Set<string> = new Set();
+
+  get hasActiveFilters(): boolean {
+    return this.selectedAssigneeIds.size > 0 || !!this.filterPriority || !!this.filterTag || this.filterIsOverdue || this.filterAssignedToMe;
+  }
+
+  clearAllFilters() {
+    this.selectedAssigneeIds.clear();
+    this.filterPriority = '';
+    this.filterTag = '';
+    this.filterIsOverdue = false;
+    this.filterAssignedToMe = false;
+  }
+
+  toggleAssignedToMe() {
+    const currentUserId = localStorage.getItem('employeeId');
+    if (this.filterAssignedToMe && currentUserId) {
+      this.selectedAssigneeIds.add(currentUserId);
+    } else if (!this.filterAssignedToMe && currentUserId) {
+      this.selectedAssigneeIds.delete(currentUserId);
+    }
+  }
 
   columns: KanbanColumn[] = [];
 
@@ -58,7 +82,8 @@ export class TaskBoardComponent implements OnInit {
     private service: ProgressTrackerService,
     private authService: AuthService,
     private statusService: TaskStatusService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private globalFilterService: GlobalFilterService
   ) {}
 
   canEditTask = false;
@@ -89,6 +114,40 @@ export class TaskBoardComponent implements OnInit {
         }
       });
     });
+
+    // Subscribe to Global Filter state
+    this.globalFilterService.filterState$.subscribe(state => {
+      this.searchText = state.searchText;
+      
+      let reloadNeeded = false;
+      if (this.filterTimeframe !== state.timeFrame) {
+        this.filterTimeframe = state.timeFrame;
+        reloadNeeded = true;
+      }
+      
+      // Handle "unassigned" checkbox logic from global state
+      const globalIds = new Set(state.employeeIds);
+      let assigneesChanged = false;
+      
+      if (this.selectedAssigneeIds.size !== globalIds.size) {
+        assigneesChanged = true;
+      } else {
+        for (let id of globalIds) {
+          if (!this.selectedAssigneeIds.has(id)) {
+            assigneesChanged = true;
+            break;
+          }
+        }
+      }
+      
+      if (assigneesChanged) {
+        this.selectedAssigneeIds = globalIds;
+      }
+      
+      if (reloadNeeded && this.allStatuses.length > 0) {
+        this.loadTasks();
+      }
+    });
   }
 
   buildColumns(statuses: TaskStatusMaster[]) {
@@ -96,6 +155,8 @@ export class TaskBoardComponent implements OnInit {
     if (this.filterStatusId) {
       activeStatuses = activeStatuses.filter(s => s.taskStatusId === this.filterStatusId);
     }
+
+    activeStatuses.sort((a, b) => a.displayOrder - b.displayOrder);
     
     this.columns = activeStatuses.map(s => ({
       id: s.taskStatusId,
@@ -144,6 +205,38 @@ export class TaskBoardComponent implements OnInit {
       const today = new Date();
       if (this.filterTimeframe === 'today') {
         const start = new Date(today);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(today);
+        end.setHours(23, 59, 59, 999);
+        filters.fromDate = start.toISOString();
+        filters.toDate = end.toISOString();
+      } else if (this.filterTimeframe === 'yesterday') {
+        const start = new Date(today);
+        start.setDate(start.getDate() - 1);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(start);
+        end.setHours(23, 59, 59, 999);
+        filters.fromDate = start.toISOString();
+        filters.toDate = end.toISOString();
+      } else if (this.filterTimeframe === 'past_7') {
+        const start = new Date(today);
+        start.setDate(start.getDate() - 7);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(today);
+        end.setHours(23, 59, 59, 999);
+        filters.fromDate = start.toISOString();
+        filters.toDate = end.toISOString();
+      } else if (this.filterTimeframe === 'past_30') {
+        const start = new Date(today);
+        start.setDate(start.getDate() - 30);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(today);
+        end.setHours(23, 59, 59, 999);
+        filters.fromDate = start.toISOString();
+        filters.toDate = end.toISOString();
+      } else if (this.filterTimeframe === 'past_year') {
+        const start = new Date(today);
+        start.setFullYear(start.getFullYear() - 1);
         start.setHours(0, 0, 0, 0);
         const end = new Date(today);
         end.setHours(23, 59, 59, 999);
@@ -271,7 +364,9 @@ export class TaskBoardComponent implements OnInit {
         (!this.filterPriority || String(t.priority) === this.filterPriority) &&
         (!this.filterEmployee || t.assignedToEmployeeId.includes(this.filterEmployee)) &&
         (!this.filterTag || (t.tags && t.tags.toLowerCase().includes(this.filterTag.toLowerCase()))) &&
-        (this.selectedAssigneeIds.size === 0 || this.selectedAssigneeIds.has(t.assignedToEmployeeId)) &&
+        (this.selectedAssigneeIds.size === 0 || 
+         this.selectedAssigneeIds.has(t.assignedToEmployeeId) || 
+         (this.selectedAssigneeIds.has('unassigned') && !t.assignedToEmployeeId)) &&
         (!this.filterIsOverdue || this.isOverdue(t))
       )
     }));

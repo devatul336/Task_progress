@@ -1,0 +1,135 @@
+.list-container {
+  padding: 24px 32px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+.list-header {
+  margin-bottom: 16px;
+  
+  .list-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+    color: #172b4d;
+    
+    mat-icon {
+      color: #5e6c84;
+    }
+  }
+}
+
+.table-container {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #dfe1e6;
+  border-radius: 3px;
+}
+
+.jira-table {
+  width: 100%;
+  
+  th.mat-header-cell {
+    color: #5e6c84;
+    font-size: 12px;
+    font-weight: 600;
+    border-bottom: 2px solid #dfe1e6;
+    background: #fafbfc;
+    padding: 0 16px;
+  }
+  
+  td.mat-cell {
+    color: #172b4d;
+    font-size: 14px;
+    border-bottom: 1px solid #dfe1e6;
+    padding: 8px 16px;
+  }
+  
+  .jira-row {
+    transition: background 0.2s;
+    
+    &:hover {
+      background: #f4f5f7;
+    }
+  }
+}
+
+.work-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .task-key {
+    color: #0052cc;
+    font-weight: 500;
+    text-decoration: none;
+    font-size: 13px;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  
+  .task-title {
+    color: #172b4d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+  }
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5e6c84;
+  font-size: 14px;
+}
+
+.mini-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.priority-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #5e6c84;
+  
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.task-type-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}

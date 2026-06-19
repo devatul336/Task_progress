@@ -17,6 +17,7 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./tasks/task-board/task-board.component').then(m => m.TaskBoardComponent) },
       { path: 'board', loadComponent: () => import('./tasks/task-board/task-board.component').then(m => m.TaskBoardComponent) },
+      { path: 'list', loadComponent: () => import('./tasks/task-list/task-list.component').then(m => m.TaskListComponent) },
       { path: 'create', loadComponent: () => import('./tasks/task-form/task-form.component').then(m => m.TaskFormComponent) },
       { path: ':id', loadComponent: () => import('./tasks/task-form/task-form.component').then(m => m.TaskFormComponent) },
     ]

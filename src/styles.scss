@@ -5,7 +5,28 @@
 html, body {
   height: 100%;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f8fafc;
+  background: var(--bg-color, #f8fafc);
+  color: var(--text-color, #172b4d);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Dark Theme Variables & Overrides */
+body.dark-theme {
+  --bg-color: #1d2125; /* Jira dark mode background */
+  --text-color: #b6c2cf; /* Jira dark mode text */
+  --surface-color: #22272b; /* Jira dark mode card background */
+  --border-color: #38414a; /* Jira dark mode border */
+  --hover-color: #2c333a; /* Jira dark mode hover */
+  
+  /* Global Overrides */
+  background: var(--bg-color);
+  color: var(--text-color);
+  
+  .mat-mdc-card {
+    background: var(--surface-color) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
 }
 
 // Custom scrollbar
