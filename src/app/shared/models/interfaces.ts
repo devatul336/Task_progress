@@ -120,6 +120,7 @@ export interface TaskSummary {
 }
 
 export interface StatusCount {
+  statusId: number;
   statusName: string;
   count: number;
   colorClass: string;

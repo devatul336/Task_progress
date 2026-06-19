@@ -43,8 +43,11 @@ export class TaskBoardComponent implements OnInit {
   filterPriority = '';
   filterEmployee = '';
   filterTag = '';
-  filterStatusCategory: number | null = null;
+  filterStatusId: number | null = null;
   filterIsOverdue = false;
+  queryEmployeeId: string | null = null;
+  queryManagerId: string | null = null;
+  filterTimeframe: string | null = null;
   
   uniqueAssignees: Assignee[] = [];
   selectedAssigneeIds: Set<string> = new Set();
@@ -67,13 +70,16 @@ export class TaskBoardComponent implements OnInit {
     this.statusService.ensureLoaded();
     
     this.route.queryParams.subscribe(params => {
-      if (params['statusCategory']) {
-        this.filterStatusCategory = Number(params['statusCategory']);
+      if (params['statusId']) {
+        this.filterStatusId = Number(params['statusId']);
       } else {
-        this.filterStatusCategory = null;
+        this.filterStatusId = null;
       }
       
       this.filterIsOverdue = params['isOverdue'] === 'true';
+      this.queryEmployeeId = params['employeeId'] || null;
+      this.queryManagerId = params['managerId'] || null;
+      this.filterTimeframe = params['timeFrame'] || null;
 
       this.statusService.statuses$.subscribe(statuses => {
         if (statuses.length > 0) {
@@ -87,8 +93,8 @@ export class TaskBoardComponent implements OnInit {
 
   buildColumns(statuses: TaskStatusMaster[]) {
     let activeStatuses = statuses.filter(s => s.isActive);
-    if (this.filterStatusCategory) {
-      activeStatuses = activeStatuses.filter(s => s.category === this.filterStatusCategory);
+    if (this.filterStatusId) {
+      activeStatuses = activeStatuses.filter(s => s.taskStatusId === this.filterStatusId);
     }
     
     this.columns = activeStatuses.map(s => ({
@@ -122,12 +128,46 @@ export class TaskBoardComponent implements OnInit {
     const departmentId = localStorage.getItem('departmentId') || undefined;
     
     let filters: any = {};
-    if (isAdmin) {
+    if (this.queryEmployeeId) {
+      filters.employeeId = this.queryEmployeeId;
+    } else if (this.queryManagerId) {
+      filters.managerId = this.queryManagerId;
+    } else if (isAdmin) {
       // Admin sees all tasks
     } else if (isManager) {
       // We don't filter by departmentId for managers to ensure we see all team tasks
     } else {
       filters.employeeId = employeeId;
+    }
+
+    if (this.filterTimeframe) {
+      const today = new Date();
+      if (this.filterTimeframe === 'today') {
+        const start = new Date(today);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(today);
+        end.setHours(23, 59, 59, 999);
+        filters.fromDate = start.toISOString();
+        filters.toDate = end.toISOString();
+      } else if (this.filterTimeframe === 'week') {
+        const start = new Date(today);
+        const day = start.getDay();
+        const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+        start.setDate(diff);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+        filters.fromDate = start.toISOString();
+        filters.toDate = end.toISOString();
+      } else if (this.filterTimeframe === 'month') {
+        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        end.setHours(23, 59, 59, 999);
+        filters.fromDate = start.toISOString();
+        filters.toDate = end.toISOString();
+      }
     }
 
     forkJoin({
@@ -165,6 +205,7 @@ export class TaskBoardComponent implements OnInit {
   distributeTasks(tasks: TaskItem[]): void {
     this.columns.forEach(col => col.tasks = []);
     tasks.forEach(task => {
+      if (this.filterIsOverdue && !this.isOverdue(task)) return;
       if (task.taskType !== 1) { // Hide Epics from the Kanban board (Epic is 1)
         const col = this.columns.find(c => c.id === task.status);
         if (col) col.tasks.push(task);
@@ -304,8 +345,8 @@ export class TaskBoardComponent implements OnInit {
   isOverdue(task: TaskItem): boolean {
     if (!task.dueDate) return false;
     const statusMaster = this.statusService.getStatuses().find(s => s.taskStatusId === task.status);
-    const isCompletedOrHold = statusMaster?.category === 5 || statusMaster?.category === 6;
-    if (isCompletedOrHold) return false;
+    const isCompletedOrCancelled = statusMaster?.category === 4 || statusMaster?.category === 6;
+    if (isCompletedOrCancelled) return false;
 
     const due = new Date(task.dueDate);
     due.setHours(0, 0, 0, 0);

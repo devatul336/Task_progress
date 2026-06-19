@@ -70,13 +70,13 @@
                *ngFor="let stat of dashboard.teamTaskSummary.statusCounts"
                [ngClass]="stat.colorClass"
                [routerLink]="['/tasks/board']" 
-               [queryParams]="{statusCategory: stat.categoryId}" 
+               [queryParams]="{statusId: stat.statusId, managerId: dashboard.managerId}" 
                style="cursor: pointer;" 
                [matTooltip]="'View ' + stat.statusName + ' Tasks'">
             <span>{{ stat.count }}</span>
             <label>{{ stat.statusName }}</label>
           </div>
-          <div class="s-item s-overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true}" style="cursor: pointer;" matTooltip="View Overdue Tasks"><span>{{ dashboard.teamTaskSummary.overdue }}</span><label>Overdue</label></div>
+          <div class="s-item s-overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true, managerId: dashboard.managerId}" style="cursor: pointer;" matTooltip="View Overdue Tasks"><span>{{ dashboard.teamTaskSummary.overdue }}</span><label>Overdue</label></div>
         </div>
         <mat-progress-bar mode="determinate" [value]="dashboard.teamTaskSummary.completionRate" color="primary"
           class="big-bar"></mat-progress-bar>
