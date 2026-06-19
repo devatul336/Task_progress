@@ -28,9 +28,8 @@ export const routes: Routes = [
   },
   {
     path: 'projects',
-    canActivate: [adminGuard],
     children: [
-      { path: 'trash', loadComponent: () => import('./projects/project-trash/project-trash.component').then(m => m.ProjectTrashComponent) },
+      { path: 'trash', loadComponent: () => import('./projects/project-trash/project-trash.component').then(m => m.ProjectTrashComponent), canActivate: [adminGuard] },
       { path: '', loadComponent: () => import('./projects/project-list/project-list.component').then(m => m.ProjectListComponent) },
       { path: ':id', loadComponent: () => import('./projects/project-detail/project-detail.component').then(m => m.ProjectDetailComponent) },
     ]

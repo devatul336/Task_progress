@@ -74,14 +74,14 @@
 
   <!-- Kanban Board -->
   <div class="kanban-board" *ngIf="!loading">
-    <div class="kanban-column" *ngFor="let col of filteredColumns">
+    <div class="kanban-column" *ngFor="let col of filteredColumns" [style.borderTop]="'3px solid ' + getColor(col.colorClass)">
 
       <!-- Column Header -->
       <div class="col-header">
         <div class="col-title">
           <span>{{ col.label }}</span>
-          <span class="count-badge" *ngIf="col.tasks.length === col.totalCount">{{ col.totalCount }}</span>
-          <span class="count-badge" *ngIf="col.tasks.length !== col.totalCount">{{ col.tasks.length }}/{{ col.totalCount }}</span>
+          <span class="count-badge" [style.backgroundColor]="getColor(col.colorClass) + '20'" [style.color]="getColor(col.colorClass) === '#DFE1E6' ? '#42526E' : getColor(col.colorClass)" *ngIf="col.tasks.length === col.totalCount">{{ col.totalCount }}</span>
+          <span class="count-badge" [style.backgroundColor]="getColor(col.colorClass) + '20'" [style.color]="getColor(col.colorClass) === '#DFE1E6' ? '#42526E' : getColor(col.colorClass)" *ngIf="col.tasks.length !== col.totalCount">{{ col.tasks.length }}/{{ col.totalCount }}</span>
         </div>
       </div>
 

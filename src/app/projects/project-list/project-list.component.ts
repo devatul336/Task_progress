@@ -13,6 +13,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
 import { ProgressTrackerService } from '../../shared/progress-tracker.service';
+import { AuthService } from '../../shared/auth.service';
 import { TrackerProject } from '../../shared/models/interfaces';
 import { ProjectDialogComponent } from '../project-dialog/project-dialog.component';
 import { TaskFormComponent } from '../../tasks/task-form/task-form.component';
@@ -30,11 +31,10 @@ import { TaskFormComponent } from '../../tasks/task-form/task-form.component';
   <div class="page-header">
     <h1>Projects</h1>
     <div style="display: flex; gap: 12px;">
-      <button mat-icon-button routerLink="/projects/trash" style="color: #626F86; margin-right: 8px;" title="View Trash">
+      <button *ngIf="canManageProjects" mat-icon-button routerLink="/projects/trash" style="color: #626F86; margin-right: 8px;" title="View Trash">
         <mat-icon>delete_outline</mat-icon>
       </button>
-      <button mat-raised-button color="primary" class="jira-btn-primary" style="background-color: #E9EAF0 !important; color: #172B4D !important;" (click)="openTaskDialog()">Create issue</button>
-      <button mat-raised-button color="primary" class="jira-btn-primary" (click)="openDialog()">Create project</button>
+      <button *ngIf="canManageProjects" mat-raised-button color="primary" class="jira-btn-primary" (click)="openDialog()">Create project</button>
     </div>
   </div>
 
@@ -97,13 +97,15 @@ import { TaskFormComponent } from '../../tasks/task-form/task-form.component';
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef style="width: 48px; text-align: right;"></th>
         <td mat-cell *matCellDef="let proj" style="text-align: right;">
-          <button mat-icon-button [matMenuTriggerFor]="menu">
-            <mat-icon>more_horiz</mat-icon>
-          </button>
-          <mat-menu #menu="matMenu">
-            <button mat-menu-item (click)="editProject(proj)">Edit project</button>
-            <button mat-menu-item (click)="deleteProject(proj)">Move to trash</button>
-          </mat-menu>
+          <ng-container *ngIf="canManageProjects">
+            <button mat-icon-button [matMenuTriggerFor]="menu">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="editProject(proj)">Edit project</button>
+              <button mat-menu-item (click)="deleteProject(proj)">Move to trash</button>
+            </mat-menu>
+          </ng-container>
         </td>
       </ng-container>
 
@@ -163,7 +165,15 @@ export class ProjectListComponent implements OnInit {
   
   displayedColumns: string[] = ['star', 'name', 'key', 'type', 'lead', 'actions'];
 
-  constructor(private service: ProgressTrackerService, private dialog: MatDialog) {}
+  get canManageProjects(): boolean {
+    return this.authService.isAdminOrHR() || this.authService.isManager();
+  }
+
+  constructor(
+    private service: ProgressTrackerService,
+    private dialog: MatDialog,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadProjects();

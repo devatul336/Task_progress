@@ -90,16 +90,7 @@ export class AutoFocusDirective implements OnInit {
         </td>
       </ng-container>
 
-      <!-- Progress Column -->
-      <ng-container matColumnDef="progress">
-        <th mat-header-cell *matHeaderCellDef style="width: 150px;"> Progress </th>
-        <td mat-cell *matCellDef="let epic">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <mat-progress-bar mode="determinate" [value]="epic.progress" style="flex: 1;"></mat-progress-bar>
-            <span style="font-size: 12px; color: #626F86; width: 35px; text-align: right;">{{ epic.progress | number:'1.0-0' }}%</span>
-          </div>
-        </td>
-      </ng-container>
+      <!-- Progress Column (Removed) -->
 
       <!-- Priority Column -->
       <ng-container matColumnDef="priority">
@@ -140,8 +131,8 @@ export class AutoFocusDirective implements OnInit {
                     (click)="changeEpicStatus(epic, opt.id, $event)">
               {{ opt.label }}
             </button>
-            <button mat-icon-button color="primary" [routerLink]="['/tasks', epic.taskItemId]" [queryParams]="{mode: 'edit'}" (click)="$event.stopPropagation()" matTooltip="Edit Epic">
-              <mat-icon>edit</mat-icon>
+            <button mat-icon-button color="primary" [routerLink]="['/tasks', epic.taskItemId]" [queryParams]="{mode: 'view'}" (click)="$event.stopPropagation()" matTooltip="View Detail">
+              <mat-icon>visibility</mat-icon>
             </button>
           </div>
         </td>
@@ -259,7 +250,7 @@ export class EpicListComponent implements OnInit {
   expandedElement: any | null = null;
   editingEpicId: number | null = null;
   
-  displayedColumns: string[] = ['title', 'status', 'priority', 'stories', 'tasks', 'progress', 'assignee', 'dueDate', 'actions'];
+  displayedColumns: string[] = ['title', 'status', 'priority', 'stories', 'tasks', 'assignee', 'dueDate', 'actions'];
 
   constructor(
     private service: ProgressTrackerService,

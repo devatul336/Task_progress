@@ -74,6 +74,8 @@ export class AppComponent implements OnInit {
   userName: string = '';
   userEmail: string = '';
   isAuthReady: boolean = false;
+  isAdmin: boolean = false;
+  isManager: boolean = false;
 
   // Dropdown states
   showUserDropdown = false;
@@ -301,9 +303,10 @@ export class AppComponent implements OnInit {
     }
   }
 
-  onSignoutHover(hover: boolean) {
-    this.signoutHover = hover;
+  onSignoutHover(isHover: boolean) {
+    this.signoutHover = isHover;
   }
+
 
   logout() {
     sessionStorage.clear();
@@ -313,13 +316,13 @@ export class AppComponent implements OnInit {
 
   filterNavItems() {
     const role = sessionStorage.getItem('userRole') || localStorage.getItem('userRole') || '';
-    const isAdmin = role === 'Admin' || role === 'HR' || this.authService.isAdminOrHR();
-    const isManager = role === 'Manager' || this.authService.isManager();
+    this.isAdmin = role === 'Admin' || role === 'HR' || this.authService.isAdminOrHR();
+    this.isManager = role === 'Manager' || this.authService.isManager();
 
     this.filteredNavGroups = this.navGroups.map(group => {
       // Filter out items based on user role
       const filteredItems = group.items.filter(item => {
-        if (isAdmin) {
+        if (this.isAdmin) {
           return true; // Admin/HR sees everything
         }
 
@@ -331,15 +334,14 @@ export class AppComponent implements OnInit {
 
         // List of routes restricted to Manager AND Admin/HR
         const managerRoutes = [
-          '/dashboard/manager',
-          '/projects'
+          '/dashboard/manager'
         ];
 
         if (adminRoutes.includes(item.route)) {
           return false; // Not admin, hide admin routes
         }
 
-        if (managerRoutes.includes(item.route) && !isManager) {
+        if (managerRoutes.includes(item.route) && !this.isManager) {
           return false; // Not manager or admin, hide manager routes
         }
 

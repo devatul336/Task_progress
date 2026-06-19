@@ -73,7 +73,7 @@ export class AuthService {
       id: id,
       name: name,
       email: email,
-      role: role || 'Admin'
+      role: role || 'Employee'
     };
   }
 

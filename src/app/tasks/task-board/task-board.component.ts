@@ -167,6 +167,21 @@ export class TaskBoardComponent implements OnInit {
     }));
   }
 
+  getColor(colorClass: string): string {
+    if (!colorClass) return '#DFE1E6';
+    if (colorClass.startsWith('#')) return colorClass;
+    
+    // Map existing preset classes to hex colors
+    switch(colorClass) {
+      case 'col-todo': return '#DFE1E6';
+      case 'col-progress': return '#0052CC';
+      case 'col-review': return '#FF991F';
+      case 'col-done': return '#00875A';
+      case 'col-hold': return '#FF991F';
+      default: return '#DFE1E6';
+    }
+  }
+
   toggleMenu(event: Event, taskId: number) {
     event.stopPropagation();
     event.preventDefault();
@@ -189,17 +204,11 @@ export class TaskBoardComponent implements OnInit {
     const departmentId = localStorage.getItem('departmentId') || undefined;
     
     let filters: any = {};
-    if (this.queryEmployeeId) {
-      filters.employeeId = this.queryEmployeeId;
-    } else if (this.queryManagerId) {
+    if (this.queryManagerId) {
       filters.managerId = this.queryManagerId;
-    } else if (isAdmin) {
-      // Admin sees all tasks
-    } else if (isManager) {
-      // We don't filter by departmentId for managers to ensure we see all team tasks
-    } else {
-      filters.employeeId = employeeId;
     }
+    // Admins, Managers, and Employees now all see the full board by default
+    // Employees can filter via the Assignee avatars if they only want to see their own.
 
     if (this.filterTimeframe) {
       const today = new Date();

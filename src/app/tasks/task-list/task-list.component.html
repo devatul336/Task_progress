@@ -7,99 +7,144 @@
 
   <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
 
-  <div class="table-container" *ngIf="!loading">
-    <table mat-table [dataSource]="tasks" class="jira-table">
+  <div class="layout-container" *ngIf="!loading">
+    
+    <!-- Sidebar Filters -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <mat-icon>filter_list</mat-icon>
+        <span>Filters</span>
+        <div class="spacer"></div>
+        <mat-icon class="more-icon">more_horiz</mat-icon>
+      </div>
+      
+      <div class="sidebar-search">
+        <mat-icon>search</mat-icon>
+        <input type="text" placeholder="Search work items" [(ngModel)]="searchQuery" (input)="applyFilter()">
+      </div>
+      
+      <div class="sidebar-group">
+        <div class="group-title">
+          <mat-icon>expand_more</mat-icon>
+          <span>Default filters</span>
+        </div>
+        <ul class="filter-list">
+          <li [class.active]="activeFilterId === 'reported_by_me'" (click)="setFilter('reported_by_me')">
+            <mat-icon>filter_list</mat-icon> <span>Reported by me</span>
+          </li>
+          <li [class.active]="activeFilterId === 'all_work_items'" (click)="setFilter('all_work_items')">
+            <mat-icon>filter_list</mat-icon> <span>All work items</span>
+          </li>
+          <li [class.active]="activeFilterId === 'open_work_items'" (click)="setFilter('open_work_items')">
+            <mat-icon>filter_list</mat-icon> <span>Open work items</span>
+          </li>
+          <li [class.active]="activeFilterId === 'done_work_items'" (click)="setFilter('done_work_items')">
+            <mat-icon>filter_list</mat-icon> <span>Done work items</span>
+          </li>
+          <li [class.active]="activeFilterId === 'created_recently'" (click)="setFilter('created_recently')">
+            <mat-icon>filter_list</mat-icon> <span>Created recently</span>
+          </li>
+        </ul>
+      </div>
+    </div>
 
-      <!-- Type Column -->
-      <ng-container matColumnDef="type">
-        <th mat-header-cell *matHeaderCellDef style="width: 40px;"></th>
-        <td mat-cell *matCellDef="let task">
-          <mat-icon class="task-type-icon" [style.color]="getTaskTypeColor(task.taskType)" [matTooltip]="task.taskType === 2 ? 'Task' : 'Bug'">
-            {{ task.taskType === 2 ? 'check_box' : 'bug_report' }}
-          </mat-icon>
-        </td>
-      </ng-container>
+    <!-- Main Content (Table) -->
+    <div class="main-content">
+      <div class="table-container">
+        <table mat-table [dataSource]="filteredTasks" class="jira-table">
 
-      <!-- Work Column (Key + Title) -->
-      <ng-container matColumnDef="work">
-        <th mat-header-cell *matHeaderCellDef> Work </th>
-        <td mat-cell *matCellDef="let task">
-          <div class="work-cell">
-            <a class="task-key" [routerLink]="['/tasks', task.taskItemId]">TSK-{{ task.taskItemId }}</a>
-            <span class="task-title">{{ task.title }}</span>
-          </div>
-        </td>
-      </ng-container>
+          <!-- Type Column -->
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef style="width: 40px;"></th>
+            <td mat-cell *matCellDef="let task">
+              <mat-icon class="task-type-icon" [style.color]="getTaskTypeColor(task.taskType)" [matTooltip]="task.taskType === 2 ? 'Task' : 'Bug'">
+                {{ task.taskType === 2 ? 'check_box' : 'bug_report' }}
+              </mat-icon>
+            </td>
+          </ng-container>
 
-      <!-- Assignee Column -->
-      <ng-container matColumnDef="assignee">
-        <th mat-header-cell *matHeaderCellDef> Assignee </th>
-        <td mat-cell *matCellDef="let task">
-          <div class="user-cell">
-            <div class="mini-avatar" [style.background]="'#dfe1e6'" [style.color]="'#172b4d'" *ngIf="!task.assignedToEmployeeName || task.assignedToEmployeeName === 'Unassigned'">
-              <mat-icon style="font-size: 16px; width: 16px; height: 16px;">person_outline</mat-icon>
-            </div>
-            <div class="mini-avatar" [style.background]="'#0052cc'" [style.color]="'white'" *ngIf="task.assignedToEmployeeName && task.assignedToEmployeeName !== 'Unassigned'">
-              {{ getInitials(task.assignedToEmployeeName) }}
-            </div>
-            <span>{{ task.assignedToEmployeeName || 'Unassigned' }}</span>
-          </div>
-        </td>
-      </ng-container>
+          <!-- Work Column (Key + Title) -->
+          <ng-container matColumnDef="work">
+            <th mat-header-cell *matHeaderCellDef> Work </th>
+            <td mat-cell *matCellDef="let task">
+              <div class="work-cell">
+                <a class="task-key" [routerLink]="['/tasks', task.taskItemId]">TSK-{{ task.taskItemId }}</a>
+                <span class="task-title">{{ task.title }}</span>
+              </div>
+            </td>
+          </ng-container>
 
-      <!-- Reporter Column -->
-      <ng-container matColumnDef="reporter">
-        <th mat-header-cell *matHeaderCellDef> Reporter </th>
-        <td mat-cell *matCellDef="let task">
-          <span>System</span>
-        </td>
-      </ng-container>
+          <!-- Assignee Column -->
+          <ng-container matColumnDef="assignee">
+            <th mat-header-cell *matHeaderCellDef> Assignee </th>
+            <td mat-cell *matCellDef="let task">
+              <div class="user-cell">
+                <div class="mini-avatar" [style.background]="'#dfe1e6'" [style.color]="'#172b4d'" *ngIf="!task.assignedToEmployeeName || task.assignedToEmployeeName === 'Unassigned'">
+                  <mat-icon style="font-size: 16px; width: 16px; height: 16px;">person_outline</mat-icon>
+                </div>
+                <div class="mini-avatar" [style.background]="'#0052cc'" [style.color]="'white'" *ngIf="task.assignedToEmployeeName && task.assignedToEmployeeName !== 'Unassigned'">
+                  {{ getInitials(task.assignedToEmployeeName) }}
+                </div>
+                <span>{{ task.assignedToEmployeeName || 'Unassigned' }}</span>
+              </div>
+            </td>
+          </ng-container>
 
-      <!-- Priority Column -->
-      <ng-container matColumnDef="priority">
-        <th mat-header-cell *matHeaderCellDef> Priority </th>
-        <td mat-cell *matCellDef="let task">
-          <div class="priority-cell">
-            <mat-icon style="color: #ff5630;" *ngIf="task.priority === 4">arrow_upward</mat-icon>
-            <mat-icon style="color: #ffab00;" *ngIf="task.priority === 3">keyboard_arrow_up</mat-icon>
-            <mat-icon style="color: #36b37e;" *ngIf="task.priority === 2">drag_handle</mat-icon>
-            <mat-icon style="color: #0065ff;" *ngIf="task.priority === 1">keyboard_arrow_down</mat-icon>
-            <span>
-              {{ task.priority === 4 ? 'Highest' : (task.priority === 3 ? 'High' : (task.priority === 2 ? 'Medium' : 'Low')) }}
-            </span>
-          </div>
-        </td>
-      </ng-container>
+          <!-- Reporter Column -->
+          <ng-container matColumnDef="reporter">
+            <th mat-header-cell *matHeaderCellDef> Reporter </th>
+            <td mat-cell *matCellDef="let task">
+              <span>System</span>
+            </td>
+          </ng-container>
 
-      <!-- Status Column -->
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef> Status </th>
-        <td mat-cell *matCellDef="let task">
-          <div class="status-badge" [style.background]="getStatusColor(task.status) + '20'" [style.color]="getStatusColor(task.status)">
-            {{ getStatusName(task.status) | uppercase }}
-            <mat-icon style="font-size: 14px; width: 14px; height: 14px;">expand_more</mat-icon>
-          </div>
-        </td>
-      </ng-container>
+          <!-- Priority Column -->
+          <ng-container matColumnDef="priority">
+            <th mat-header-cell *matHeaderCellDef> Priority </th>
+            <td mat-cell *matCellDef="let task">
+              <div class="priority-cell">
+                <mat-icon style="color: #ff5630;" *ngIf="task.priority === 4">arrow_upward</mat-icon>
+                <mat-icon style="color: #ffab00;" *ngIf="task.priority === 3">keyboard_arrow_up</mat-icon>
+                <mat-icon style="color: #36b37e;" *ngIf="task.priority === 2">drag_handle</mat-icon>
+                <mat-icon style="color: #0065ff;" *ngIf="task.priority === 1">keyboard_arrow_down</mat-icon>
+                <span>
+                  {{ task.priority === 4 ? 'Highest' : (task.priority === 3 ? 'High' : (task.priority === 2 ? 'Medium' : 'Low')) }}
+                </span>
+              </div>
+            </td>
+          </ng-container>
 
-      <!-- Resolution Column -->
-      <ng-container matColumnDef="resolution">
-        <th mat-header-cell *matHeaderCellDef> Resolution </th>
-        <td mat-cell *matCellDef="let task">
-          <span style="color: #5e6c84;">{{ task.status === 4 ? 'Done' : 'Unresolved' }}</span>
-        </td>
-      </ng-container>
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef> Status </th>
+            <td mat-cell *matCellDef="let task">
+              <div class="status-badge" [style.background]="getStatusColor(task.status) + '20'" [style.color]="getStatusColor(task.status)">
+                {{ getStatusName(task.status) | uppercase }}
+                <mat-icon style="font-size: 14px; width: 14px; height: 14px;">expand_more</mat-icon>
+              </div>
+            </td>
+          </ng-container>
 
-      <!-- Created Column -->
-      <ng-container matColumnDef="created">
-        <th mat-header-cell *matHeaderCellDef> Created </th>
-        <td mat-cell *matCellDef="let task">
-          <span style="color: #5e6c84;">{{ task.createdAt | date:'mediumDate' }}</span>
-        </td>
-      </ng-container>
+          <!-- Resolution Column -->
+          <ng-container matColumnDef="resolution">
+            <th mat-header-cell *matHeaderCellDef> Resolution </th>
+            <td mat-cell *matCellDef="let task">
+              <span style="color: #5e6c84;">{{ task.status === 4 ? 'Done' : 'Unresolved' }}</span>
+            </td>
+          </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="jira-row"></tr>
-    </table>
+          <!-- Created Column -->
+          <ng-container matColumnDef="created">
+            <th mat-header-cell *matHeaderCellDef> Created </th>
+            <td mat-cell *matCellDef="let task">
+              <span style="color: #5e6c84;">{{ task.createdDate | date:'mediumDate' }}</span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="jira-row"></tr>
+        </table>
+      </div>
+    </div>
   </div>
 </div>

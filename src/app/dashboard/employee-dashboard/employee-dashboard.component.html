@@ -119,43 +119,29 @@
 
     <!-- Charts Row -->
     <div class="charts-row">
-      <mat-card class="chart-card wide">
+      <mat-card class="chart-card half">
         <mat-card-header>
-          <mat-icon mat-card-avatar>show_chart</mat-icon>
-          <mat-card-title>Productivity Trend (Last 30 Days)</mat-card-title>
+          <mat-icon mat-card-avatar>donut_small</mat-icon>
+          <mat-card-title>Tasks by Status</mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <div class="chart-container">
-            <canvas baseChart [data]="trendChartData" [type]="trendChartType" [options]="trendChartOptions"></canvas>
+            <canvas baseChart [data]="statusChartData" [type]="statusChartType" [options]="statusChartOptions"></canvas>
           </div>
         </mat-card-content>
       </mat-card>
 
-      <div class="chart-col">
-        <mat-card class="chart-card half">
-          <mat-card-header>
-            <mat-icon mat-card-avatar>donut_small</mat-icon>
-            <mat-card-title>Tasks by Status</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="chart-container">
-              <canvas baseChart [data]="statusChartData" [type]="statusChartType" [options]="statusChartOptions"></canvas>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card class="chart-card half">
-          <mat-card-header>
-            <mat-icon mat-card-avatar>bar_chart</mat-icon>
-            <mat-card-title>Tasks by Priority</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="chart-container">
-              <canvas baseChart [data]="priorityChartData" [type]="priorityChartType" [options]="priorityChartOptions"></canvas>
-            </div>
-          </mat-card-content>
-        </mat-card>
-      </div>
+      <mat-card class="chart-card half">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>bar_chart</mat-icon>
+          <mat-card-title>Tasks by Priority</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="chart-container">
+            <canvas baseChart [data]="priorityChartData" [type]="priorityChartType" [options]="priorityChartOptions"></canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
     </div>
 
     <!-- Tasks Lists Row -->
