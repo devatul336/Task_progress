@@ -114,14 +114,16 @@ export interface TaskHistory {
 
 export interface TaskSummary {
   total: number;
-  toDo: number;
-  inProgress: number;
-  underReview: number;
-  completed: number;
-  onHold: number;
-  cancelled: number;
   overdue: number;
   completionRate: number;
+  statusCounts: StatusCount[];
+}
+
+export interface StatusCount {
+  statusName: string;
+  count: number;
+  colorClass: string;
+  categoryId: number;
 }
 
 export interface TrackerProject {

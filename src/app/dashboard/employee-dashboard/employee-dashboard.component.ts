@@ -86,6 +86,25 @@ export class EmployeeDashboardComponent implements OnInit {
     this.loadDashboard(employeeId);
   }
 
+  getEmployeeNameFromStorage(): string {
+    const userStr = sessionStorage.getItem('user');
+    if (userStr) {
+        try {
+            const userObj = JSON.parse(userStr);
+            const firstName = userObj.firstName || userObj.FirstName || '';
+            const lastName = userObj.lastName || userObj.LastName || '';
+            const name = userObj.name || userObj.Name || '';
+            if (firstName || lastName) {
+                return `${firstName} ${lastName}`.trim();
+            }
+            if (name) {
+                return name;
+            }
+        } catch(e) {}
+    }
+    return 'User';
+  }
+
   errorMessage: string | null = null;
 
   loadDashboard(employeeId: string): void {
@@ -93,20 +112,22 @@ export class EmployeeDashboardComponent implements OnInit {
     this.service.getEmployeeDashboard(employeeId).subscribe({
       next: (data) => {
         this.dashboard = data;
+        if (!this.dashboard.employeeName || this.dashboard.employeeName.trim() === '') {
+            this.dashboard.employeeName = this.getEmployeeNameFromStorage();
+        }
         this.buildCharts(data);
         this.loading = false;
       },
-      error: (err) => { 
+      error: (err: any) => { 
         console.error('Error fetching employee dashboard:', err);
-        this.errorMessage = null;
         
         // Render empty UI instead of blank page
         this.dashboard = {
           employeeId: employeeId,
-          employeeName: 'Unknown User',
-          todayTasks: { total: 0, toDo: 0, inProgress: 0, underReview: 0, completed: 0, onHold: 0, cancelled: 0, overdue: 0, completionRate: 0 },
-          weekTasks: { total: 0, toDo: 0, inProgress: 0, underReview: 0, completed: 0, onHold: 0, cancelled: 0, overdue: 0, completionRate: 0 },
-          monthTasks: { total: 0, toDo: 0, inProgress: 0, underReview: 0, completed: 0, onHold: 0, cancelled: 0, overdue: 0, completionRate: 0 },
+          employeeName: this.getEmployeeNameFromStorage(),
+          todayTasks: { total: 0, overdue: 0, completionRate: 0, statusCounts: [] },
+          weekTasks: { total: 0, overdue: 0, completionRate: 0, statusCounts: [] },
+          monthTasks: { total: 0, overdue: 0, completionRate: 0, statusCounts: [] },
           upcomingDeadlines: [],
           overdueTasks: [],
           recentlyCompleted: [],
@@ -121,7 +142,7 @@ export class EmployeeDashboardComponent implements OnInit {
           tasksByPriority: []
         };
         this.buildCharts(this.dashboard);
-
+        this.errorMessage = 'Backend is offline. Showing empty UI.';
         this.loading = false; 
       }
     });

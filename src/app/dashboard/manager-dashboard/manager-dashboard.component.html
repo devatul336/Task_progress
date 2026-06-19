@@ -66,14 +66,16 @@
       </mat-card-header>
       <mat-card-content>
         <div class="summary-grid">
-          <div class="s-item s-todo" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 1}" style="cursor: pointer;" matTooltip="View To Do Tasks"><span>{{ dashboard.teamTaskSummary.toDo }}</span><label>To Do</label></div>
-          <div class="s-item s-progress" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 2}" style="cursor: pointer;" matTooltip="View In Progress Tasks"><span>{{ dashboard.teamTaskSummary.inProgress }}</span><label>In
-              Progress</label></div>
-          <div class="s-item s-review" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 3}" style="cursor: pointer;" matTooltip="View In Review Tasks"><span>{{ dashboard.teamTaskSummary.underReview }}</span><label>In Review</label>
+          <div class="s-item" 
+               *ngFor="let stat of dashboard.teamTaskSummary.statusCounts"
+               [ngClass]="stat.colorClass"
+               [routerLink]="['/tasks/board']" 
+               [queryParams]="{statusCategory: stat.categoryId}" 
+               style="cursor: pointer;" 
+               [matTooltip]="'View ' + stat.statusName + ' Tasks'">
+            <span>{{ stat.count }}</span>
+            <label>{{ stat.statusName }}</label>
           </div>
-          <div class="s-item s-done" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 5}" style="cursor: pointer;" matTooltip="View Completed Tasks"><span>{{ dashboard.teamTaskSummary.completed }}</span><label>Completed</label>
-          </div>
-          <div class="s-item s-hold" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 6}" style="cursor: pointer;" matTooltip="View On Hold Tasks"><span>{{ dashboard.teamTaskSummary.onHold }}</span><label>On Hold</label></div>
           <div class="s-item s-overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true}" style="cursor: pointer;" matTooltip="View Overdue Tasks"><span>{{ dashboard.teamTaskSummary.overdue }}</span><label>Overdue</label></div>
         </div>
         <mat-progress-bar mode="determinate" [value]="dashboard.teamTaskSummary.completionRate" color="primary"

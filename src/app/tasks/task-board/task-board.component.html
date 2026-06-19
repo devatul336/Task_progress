@@ -10,6 +10,11 @@
         <mat-icon class="search-icon">search</mat-icon>
         <input type="text" [(ngModel)]="searchText" placeholder="Search tasks...">
       </div>
+      
+      <div class="jira-search-bar" style="margin-left: 12px; width: 150px;">
+        <mat-icon class="search-icon">label</mat-icon>
+        <input type="text" [(ngModel)]="filterTag" placeholder="Filter by tag...">
+      </div>
 
       <!-- Jira-style Avatar Filters -->
       <div class="jira-avatar-filters" *ngIf="uniqueAssignees.length > 0">
@@ -77,21 +82,11 @@
                 <div class="custom-mfe-dropdown" *ngIf="activeMenuId === task.taskItemId"
                   (click)="$event.stopPropagation()">
                   <ng-container *ngIf="task.projectStatus !== 4">
-                    <button class="dropdown-item" *ngIf="task.status !== 1" (click)="moveTask(task, 1); closeMenu()">
-                      <mat-icon>list_alt</mat-icon> Move to To Do
-                    </button>
-                    <button class="dropdown-item" *ngIf="task.status !== 2" (click)="moveTask(task, 2); closeMenu()">
-                      <mat-icon>pending</mat-icon> Move to In Progress
-                    </button>
-                    <button class="dropdown-item" *ngIf="task.status !== 3" (click)="moveTask(task, 3); closeMenu()">
-                      <mat-icon>rate_review</mat-icon> Move to Review
-                    </button>
-                    <button class="dropdown-item" *ngIf="task.status !== 4" (click)="moveTask(task, 4); closeMenu()">
-                      <mat-icon>check_circle</mat-icon> Mark Complete
-                    </button>
-                    <button class="dropdown-item" *ngIf="task.status !== 5" (click)="moveTask(task, 5); closeMenu()">
-                      <mat-icon>pause_circle</mat-icon> Put On Hold
-                    </button>
+                    <ng-container *ngFor="let status of allStatuses">
+                      <button class="dropdown-item" *ngIf="task.status !== status.taskStatusId" (click)="moveTask(task, status.taskStatusId); closeMenu()">
+                        <mat-icon>{{ getStatusIcon(status.category) }}</mat-icon> Move to {{ status.name }}
+                      </button>
+                    </ng-container>
                     <div class="dropdown-divider"></div>
                   </ng-container>
                   <button class="dropdown-item" [routerLink]="['/tasks', task.taskItemId]"

@@ -42,6 +42,7 @@ export class TaskBoardComponent implements OnInit {
   searchText = '';
   filterPriority = '';
   filterEmployee = '';
+  filterTag = '';
   filterStatusCategory: number | null = null;
   filterIsOverdue = false;
   
@@ -59,6 +60,7 @@ export class TaskBoardComponent implements OnInit {
 
   canEditTask = false;
   activeMenuId: number | null = null;
+  allStatuses: TaskStatusMaster[] = [];
 
   ngOnInit(): void {
     this.canEditTask = this.authService.isAdminOrHR() || this.authService.isManager();
@@ -75,6 +77,7 @@ export class TaskBoardComponent implements OnInit {
 
       this.statusService.statuses$.subscribe(statuses => {
         if (statuses.length > 0) {
+          this.allStatuses = statuses.filter(s => s.isActive);
           this.buildColumns(statuses);
           this.loadTasks();
         }
@@ -216,7 +219,7 @@ export class TaskBoardComponent implements OnInit {
   }
 
   get filteredColumns(): any[] {
-    if (!this.searchText && !this.filterPriority && !this.filterEmployee && this.selectedAssigneeIds.size === 0 && !this.filterIsOverdue) {
+    if (!this.searchText && !this.filterPriority && !this.filterEmployee && !this.filterTag && this.selectedAssigneeIds.size === 0 && !this.filterIsOverdue) {
       return this.columns.map(col => ({ ...col, totalCount: col.tasks.length }));
     }
     return this.columns.map(col => ({
@@ -226,6 +229,7 @@ export class TaskBoardComponent implements OnInit {
         (!this.searchText || t.title.toLowerCase().includes(this.searchText.toLowerCase())) &&
         (!this.filterPriority || String(t.priority) === this.filterPriority) &&
         (!this.filterEmployee || t.assignedToEmployeeId.includes(this.filterEmployee)) &&
+        (!this.filterTag || (t.tags && t.tags.toLowerCase().includes(this.filterTag.toLowerCase()))) &&
         (this.selectedAssigneeIds.size === 0 || this.selectedAssigneeIds.has(t.assignedToEmployeeId)) &&
         (!this.filterIsOverdue || this.isOverdue(t))
       )
@@ -276,6 +280,18 @@ export class TaskBoardComponent implements OnInit {
       5: 'bug_report'                // Bug
     };
     return map[type] || 'check_box';
+  }
+
+  getStatusIcon(category: number): string {
+    const icons: Record<number, string> = {
+      1: 'list_alt',
+      2: 'pending',
+      3: 'rate_review',
+      5: 'check_circle',
+      6: 'pause_circle',
+      4: 'cancel'
+    };
+    return icons[category] || 'radio_button_unchecked';
   }
 
   getDaysLeft(dueDate: string): string {

@@ -7,7 +7,7 @@
         <mat-icon class="title-icon">dashboard</mat-icon>
         My Progress Dashboard
       </h1>
-      <p class="subtitle" *ngIf="dashboard">Welcome back, <strong>{{ dashboard.employeeName }}</strong></p>
+      <p class="subtitle" *ngIf="dashboard">Welcome</p>
     </div>
     <div class="header-right">
       <button mat-raised-button color="primary" routerLink="/tasks/create">
@@ -70,9 +70,9 @@
         </mat-card-header>
         <mat-card-content>
           <div class="task-stats">
-            <div class="stat-item todo" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 1}" style="cursor: pointer;"><span>{{ dashboard.todayTasks.toDo }}</span><label>To Do</label></div>
-            <div class="stat-item progress" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 2}" style="cursor: pointer;"><span>{{ dashboard.todayTasks.inProgress }}</span><label>In Progress</label></div>
-            <div class="stat-item done" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 5}" style="cursor: pointer;"><span>{{ dashboard.todayTasks.completed }}</span><label>Done</label></div>
+            <div class="stat-item" *ngFor="let stat of dashboard.todayTasks.statusCounts" [ngClass]="stat.colorClass" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: stat.categoryId}" style="cursor: pointer;">
+              <span>{{ stat.count }}</span><label>{{ stat.statusName }}</label>
+            </div>
             <div class="stat-item overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true}" style="cursor: pointer;"><span>{{ dashboard.todayTasks.overdue }}</span><label>Overdue</label></div>
           </div>
           <mat-progress-bar mode="determinate" [value]="dashboard.todayTasks.completionRate" color="primary" class="completion-bar"></mat-progress-bar>
@@ -88,9 +88,9 @@
         </mat-card-header>
         <mat-card-content>
           <div class="task-stats">
-            <div class="stat-item todo" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 1}" style="cursor: pointer;"><span>{{ dashboard.weekTasks.toDo }}</span><label>To Do</label></div>
-            <div class="stat-item progress" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 2}" style="cursor: pointer;"><span>{{ dashboard.weekTasks.inProgress }}</span><label>In Progress</label></div>
-            <div class="stat-item done" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 5}" style="cursor: pointer;"><span>{{ dashboard.weekTasks.completed }}</span><label>Done</label></div>
+            <div class="stat-item" *ngFor="let stat of dashboard.weekTasks.statusCounts" [ngClass]="stat.colorClass" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: stat.categoryId}" style="cursor: pointer;">
+              <span>{{ stat.count }}</span><label>{{ stat.statusName }}</label>
+            </div>
             <div class="stat-item overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true}" style="cursor: pointer;"><span>{{ dashboard.weekTasks.overdue }}</span><label>Overdue</label></div>
           </div>
           <mat-progress-bar mode="determinate" [value]="dashboard.weekTasks.completionRate" color="accent" class="completion-bar"></mat-progress-bar>
@@ -106,9 +106,9 @@
         </mat-card-header>
         <mat-card-content>
           <div class="task-stats">
-            <div class="stat-item todo" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 1}" style="cursor: pointer;"><span>{{ dashboard.monthTasks.toDo }}</span><label>To Do</label></div>
-            <div class="stat-item progress" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 2}" style="cursor: pointer;"><span>{{ dashboard.monthTasks.inProgress }}</span><label>In Progress</label></div>
-            <div class="stat-item done" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: 5}" style="cursor: pointer;"><span>{{ dashboard.monthTasks.completed }}</span><label>Done</label></div>
+            <div class="stat-item" *ngFor="let stat of dashboard.monthTasks.statusCounts" [ngClass]="stat.colorClass" [routerLink]="['/tasks/board']" [queryParams]="{statusCategory: stat.categoryId}" style="cursor: pointer;">
+              <span>{{ stat.count }}</span><label>{{ stat.statusName }}</label>
+            </div>
             <div class="stat-item overdue" [routerLink]="['/tasks/board']" [queryParams]="{isOverdue: true}" style="cursor: pointer;"><span>{{ dashboard.monthTasks.overdue }}</span><label>Overdue</label></div>
           </div>
           <mat-progress-bar mode="determinate" [value]="dashboard.monthTasks.completionRate" color="warn" class="completion-bar"></mat-progress-bar>

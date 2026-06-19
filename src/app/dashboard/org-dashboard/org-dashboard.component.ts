@@ -86,53 +86,31 @@ export class OrgDashboardComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => { 
-        console.warn('Backend returned error or 403. Loading rich mock data for demonstration purposes.', err);
-        // Load rich mock data instead of empty data so UI looks premium even if unauthorized
+        console.error('Error fetching org dashboard:', err);
+        
+        // Render empty UI
         this.dashboard = {
-          totalEmployees: 124, 
-          activeProjects: 18, 
-          totalTasksThisMonth: 842, 
-          completedTasksThisMonth: 615,
-          organizationTaskCompletionRate: 73, 
-          organizationKPIAchievementRate: 81, 
-          overdueTasks: 45, 
-          overdueProjects: 2,
-          departmentPerformance: [
-            { departmentName: 'Engineering', employeeCount: 45, totalTasks: 400, completedTasks: 320, taskCompletionRate: 80, overallScore: 85, topPerformerName: 'Alice', kpiAchievementRate: 88, atRiskCount: 1 },
-            { departmentName: 'Marketing', employeeCount: 20, totalTasks: 150, completedTasks: 90, taskCompletionRate: 60, overallScore: 65, topPerformerName: 'Bob', kpiAchievementRate: 70, atRiskCount: 3 },
-            { departmentName: 'Sales', employeeCount: 30, totalTasks: 200, completedTasks: 160, taskCompletionRate: 80, overallScore: 82, topPerformerName: 'Charlie', kpiAchievementRate: 84, atRiskCount: 0 },
-            { departmentName: 'HR', employeeCount: 10, totalTasks: 50, completedTasks: 45, taskCompletionRate: 90, overallScore: 92, topPerformerName: 'David', kpiAchievementRate: 95, atRiskCount: 0 }
-          ], 
-          topPerformers: [
-            { employeeName: 'David (HR)', departmentName: 'HR', totalTasks: 15, taskCompletionRate: 100, kpiAchievementRate: 98, overallScore: 99, performanceBand: 'Outstanding', employeeId: '1', rank: 1, completedTasks: 15, overdueTasks: 0 },
-            { employeeName: 'Alice (Eng)', departmentName: 'Engineering', totalTasks: 30, taskCompletionRate: 95, kpiAchievementRate: 90, overallScore: 92, performanceBand: 'Excellent', employeeId: '2', rank: 2, completedTasks: 28, overdueTasks: 0 }
-          ], 
+          totalEmployees: 0, 
+          activeProjects: 0, 
+          totalTasksThisMonth: 0, 
+          completedTasksThisMonth: 0,
+          organizationTaskCompletionRate: 0, 
+          organizationKPIAchievementRate: 0, 
+          overdueTasks: 0, 
+          overdueProjects: 0,
+          departmentPerformance: [],
+          topPerformers: [], 
           atRiskEmployees: [], 
           criticalProjects: [],
-          tasksByStatus: [
-            { label: 'Completed', value: 615, color: '#10b981' },
-            { label: 'In Progress', value: 150, color: '#3b82f6' },
-            { label: 'ToDo', value: 32, color: '#94a3b8' },
-            { label: 'Overdue', value: 45, color: '#ef4444' }
-          ], 
+          tasksByStatus: [], 
           tasksByDepartment: [], 
-          monthlyCompletionTrend: [
-            { month: 'Jan', year: 2026, totalTasks: 700, completedTasks: 600, overdueTasks: 30, completionRate: 85 },
-            { month: 'Feb', year: 2026, totalTasks: 750, completedTasks: 620, overdueTasks: 40, completionRate: 82 },
-            { month: 'Mar', year: 2026, totalTasks: 800, completedTasks: 710, overdueTasks: 25, completionRate: 88 },
-            { month: 'Apr', year: 2026, totalTasks: 842, completedTasks: 615, overdueTasks: 45, completionRate: 73 }
-          ], 
+          monthlyCompletionTrend: [], 
           kpiAchievementByDepartment: [], 
-          weeklyOrgProgress: [
-            { week: 'Week 1', totalTasks: 200, completedTasks: 150, completionRate: 75 },
-            { week: 'Week 2', totalTasks: 210, completedTasks: 160, completionRate: 76 },
-            { week: 'Week 3', totalTasks: 220, completedTasks: 180, completionRate: 81 },
-            { week: 'Week 4', totalTasks: 212, completedTasks: 125, completionRate: 58 }
-          ]
-        } as any;
+          weeklyOrgProgress: []
+        };
         this.buildCharts(this.dashboard as any);
-        this.errorMessage = null; // Hide error message to show mock UI smoothly
-        this.loading = false; 
+        this.errorMessage = 'Backend is offline. Showing empty UI.';
+        this.loading = false;
       }
     });
   }
