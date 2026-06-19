@@ -115,6 +115,12 @@ export class GoalDetailsComponent implements OnInit {
       this.service.getGoalById(this.goalId).subscribe(data => {
         this.goal = data;
 
+        // Force progress to 100% and current value to target if status is Achieved
+        if (this.goal.status === 3) {
+          this.goal.progressPercentage = 100;
+          this.goal.currentValue = this.goal.targetValue;
+        }
+
         const resolveName = (idOrName: string) => {
           if (!idOrName) return '';
           if (empMap.has(idOrName)) return empMap.get(idOrName)!;
@@ -152,7 +158,7 @@ export class GoalDetailsComponent implements OnInit {
           this.goal.statusName = this.goal.statusName.replace(/([A-Z])/g, ' $1').trim();
         }
 
-        this.newProgressValue = data.currentValue;
+        this.newProgressValue = this.goal.currentValue;
 
         this.mockMilestones = data.milestones || [];
         this.mockAttachments = data.attachments || [];

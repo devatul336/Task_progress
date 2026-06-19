@@ -376,14 +376,11 @@ export class GoalFormComponent implements OnInit {
         label: 'Status',
         type: 'select',
         options: [
-          { label: 'Draft', value: 1 },
-          { label: 'Not Started', value: 2 },
-          { label: 'In Progress', value: 3 },
-          { label: 'On Hold', value: 4 },
-          { label: 'Pending Review', value: 5 },
-          { label: 'Completed', value: 6 },
-          { label: 'Rejected', value: 7 },
-          { label: 'Cancelled', value: 8 }
+          { label: 'Not Started', value: 1 },
+          { label: 'In Progress', value: 2 },
+          { label: 'Achieved', value: 3 },
+          { label: 'Missed', value: 4 },
+          { label: 'Deferred', value: 5 }
         ],
         value: initialData.status,
         disabled: this.isViewOnly || !this.isEdit,

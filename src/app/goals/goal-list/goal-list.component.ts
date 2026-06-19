@@ -88,7 +88,7 @@ export class GoalListComponent implements OnInit {
       next: ({ goals, employees }) => { 
         const emps = (employees as any).value ? (employees as any).value : employees;
         goals.forEach(g => {
-          if (g.status === 6) {
+          if (g.status === 3) {
             g.progressPercentage = 100;
           }
           if (!g.employeeName || g.employeeName === 'Current User' || g.employeeName === 'Unknown User') {
@@ -258,14 +258,14 @@ export class GoalListComponent implements OnInit {
   }
 
   populateKanban() {
-    this.kanbanDraft = this.filteredGoals.filter(g => g.status === 1);
-    this.kanbanNotStarted = this.filteredGoals.filter(g => g.status === 2);
-    this.kanbanInProgress = this.filteredGoals.filter(g => g.status === 3);
-    this.kanbanOnHold = this.filteredGoals.filter(g => g.status === 4);
-    this.kanbanPendingReview = this.filteredGoals.filter(g => g.status === 5);
-    this.kanbanCompleted = this.filteredGoals.filter(g => g.status === 6);
-    this.kanbanRejected = this.filteredGoals.filter(g => g.status === 7);
-    this.kanbanCancelled = this.filteredGoals.filter(g => g.status === 8);
+    this.kanbanDraft = [];
+    this.kanbanNotStarted = this.filteredGoals.filter(g => g.status === 1);
+    this.kanbanInProgress = this.filteredGoals.filter(g => g.status === 2);
+    this.kanbanCompleted = this.filteredGoals.filter(g => g.status === 3);
+    this.kanbanRejected = this.filteredGoals.filter(g => g.status === 4);
+    this.kanbanOnHold = this.filteredGoals.filter(g => g.status === 5);
+    this.kanbanPendingReview = [];
+    this.kanbanCancelled = [];
   }
 
   drop(event: CdkDragDrop<any[]>, targetStatus: number) {
@@ -301,7 +301,7 @@ export class GoalListComponent implements OnInit {
         // Updated locally so it stays in the right column
         goal.status = newStatus;
         // Optionally map status to statusName
-        const statusNames: {[key:number]:string} = { 2: 'Not Started', 3: 'In Progress', 5: 'Pending Review', 6: 'Completed' };
+        const statusNames: {[key:number]:string} = { 1: 'Not Started', 2: 'In Progress', 3: 'Achieved', 4: 'Missed', 5: 'Deferred' };
         goal.statusName = statusNames[newStatus] || goal.statusName;
         // Refresh full state
         this.loadGoals(); 
@@ -315,9 +315,9 @@ export class GoalListComponent implements OnInit {
 
   // --- Computed KPIs ---
   get totalGoals() { return this.goals.length; }
-  get inProgressCount() { return this.goals.filter(g => g.status === 3).length; }
+  get inProgressCount() { return this.goals.filter(g => g.status === 2).length; }
   get pendingReviewCount() { return this.goals.filter(g => g.status === 5).length; }
-  get completedCount() { return this.goals.filter(g => g.status === 6).length; }
+  get completedCount() { return this.goals.filter(g => g.status === 3).length; }
   get overdueCount() { return this.goals.filter(g => g.isOverdue).length; }
 
   // --- UI Helpers ---
@@ -343,18 +343,18 @@ export class GoalListComponent implements OnInit {
 
   getStatusClass(status: number): string {
     switch(status) {
-      case 3: return 'in-progress';
-      case 6: return 'completed';
+      case 2: return 'in-progress';
+      case 3: return 'completed';
       default: return '';
     }
   }
 
   getStatusColor(status: number): string {
     switch(status) {
-      case 6: return '#16a34a'; // Green
-      case 3: return '#2563eb'; // Blue
+      case 3: return '#16a34a'; // Green
+      case 2: return '#2563eb'; // Blue
       case 5: return '#d97706'; // Orange
-      case 2: return '#64748b'; // Gray
+      case 1: return '#64748b'; // Gray
       default: return '#1e293b';
     }
   }

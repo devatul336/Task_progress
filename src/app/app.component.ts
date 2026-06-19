@@ -223,6 +223,34 @@ export class AppComponent implements OnInit {
       this.isAuthReady = true;
       this.initNotifications();
     }
+
+    // Global interceptor to prevent past dates in all date inputs across the project
+    const todayStr = new Date().toISOString().split('T')[0];
+    const enforceMinDate = (node: any) => {
+      if (node.nodeType === 1) {
+        if (node.tagName === 'INPUT' && node.type === 'date') {
+          node.setAttribute('min', todayStr);
+        }
+        if (node.querySelectorAll) {
+          const inputs = node.querySelectorAll('input[type="date"]');
+          inputs.forEach((input: HTMLInputElement) => {
+            input.setAttribute('min', todayStr);
+          });
+        }
+      }
+    };
+
+    // Apply to already existing elements just in case
+    enforceMinDate(document.body);
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.addedNodes) {
+          mutation.addedNodes.forEach(enforceMinDate);
+        }
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   private initNotifications() {
@@ -307,7 +335,6 @@ export class AppComponent implements OnInit {
     this.signoutHover = isHover;
   }
 
-
   logout() {
     sessionStorage.clear();
     localStorage.clear();
@@ -315,9 +342,12 @@ export class AppComponent implements OnInit {
   }
 
   filterNavItems() {
-    const role = sessionStorage.getItem('userRole') || localStorage.getItem('userRole') || '';
-    this.isAdmin = role === 'Admin' || role === 'HR' || this.authService.isAdminOrHR();
-    this.isManager = role === 'Manager' || this.authService.isManager();
+    const storageRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole');
+    const realRole = this.authService.getUserRole();
+    const role = storageRole ? storageRole : realRole;
+    
+    this.isAdmin = role === 'Admin' || role === 'HR';
+    this.isManager = role === 'Manager' || this.isAdmin;
 
     this.filteredNavGroups = this.navGroups.map(group => {
       // Filter out items based on user role
