@@ -88,6 +88,9 @@ export class GoalListComponent implements OnInit {
       next: ({ goals, employees }) => { 
         const emps = (employees as any).value ? (employees as any).value : employees;
         goals.forEach(g => {
+          if (g.status === 6) {
+            g.progressPercentage = 100;
+          }
           if (!g.employeeName || g.employeeName === 'Current User' || g.employeeName === 'Unknown User') {
             const emp = emps.find((e: any) => e.employeeId === g.employeeId);
             if (emp) {

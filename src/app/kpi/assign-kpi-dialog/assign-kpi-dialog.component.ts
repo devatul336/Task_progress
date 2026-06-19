@@ -43,14 +43,14 @@ import { KPIDefinition } from '../../shared/models/interfaces';
         <div class="row">
           <mat-form-field appearance="outline" class="half-width">
             <mat-label>Period Start</mat-label>
-            <input matInput [matDatepicker]="picker1" formControlName="periodStart">
+            <input matInput [matDatepicker]="picker1" formControlName="periodStart" [min]="minDate">
             <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
             <mat-datepicker #picker1></mat-datepicker>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="half-width">
             <mat-label>Period End</mat-label>
-            <input matInput [matDatepicker]="picker2" formControlName="periodEnd">
+            <input matInput [matDatepicker]="picker2" formControlName="periodEnd" [min]="minDate">
             <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
             <mat-datepicker #picker2></mat-datepicker>
           </mat-form-field>
@@ -80,6 +80,7 @@ export class AssignKpiDialogComponent implements OnInit {
   employees: any[] = [];
   definitions: KPIDefinition[] = [];
   saving = false;
+  minDate = new Date();
 
   constructor(
     private fb: FormBuilder,

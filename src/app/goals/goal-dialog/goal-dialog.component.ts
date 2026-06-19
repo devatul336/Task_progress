@@ -48,7 +48,7 @@ import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 
           <mat-form-field appearance="outline" class="half-width">
             <mat-label>Target Date</mat-label>
-            <input matInput [matDatepicker]="picker" formControlName="targetDate">
+            <input matInput [matDatepicker]="picker" formControlName="targetDate" [min]="minDate">
             <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
             <mat-datepicker #picker></mat-datepicker>
           </mat-form-field>
@@ -76,6 +76,7 @@ export class GoalDialogComponent implements OnInit {
   goalForm: FormGroup;
   saving = false;
   employees: any[] = [];
+  minDate = new Date();
 
   constructor(
     private fb: FormBuilder,

@@ -86,14 +86,14 @@ import { ProgressTrackerService } from '../../shared/progress-tracker.service';
         <div class="row">
           <mat-form-field appearance="outline" class="half-width">
             <mat-label>Start Date</mat-label>
-            <input matInput [matDatepicker]="picker1" formControlName="startDate">
+            <input matInput [matDatepicker]="picker1" formControlName="startDate" [min]="minDate">
             <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
             <mat-datepicker #picker1></mat-datepicker>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="half-width">
             <mat-label>End Date</mat-label>
-            <input matInput [matDatepicker]="picker2" formControlName="endDate">
+            <input matInput [matDatepicker]="picker2" formControlName="endDate" [min]="minDate">
             <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
             <mat-datepicker #picker2></mat-datepicker>
           </mat-form-field>
@@ -165,7 +165,7 @@ import { ProgressTrackerService } from '../../shared/progress-tracker.service';
           
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Due Date</mat-label>
-            <input matInput [matDatepicker]="taskPicker" formControlName="taskDueDate">
+            <input matInput [matDatepicker]="taskPicker" formControlName="taskDueDate" [min]="minDate">
             <mat-datepicker-toggle matSuffix [for]="taskPicker"></mat-datepicker-toggle>
             <mat-datepicker #taskPicker></mat-datepicker>
           </mat-form-field>
@@ -199,6 +199,7 @@ export class ProjectDialogComponent implements OnInit {
   isEdit = false;
   projectId?: number;
   existingAttachmentUrl: string | null = null;
+  minDate = new Date();
 
   isImage(url: string | null): boolean {
     if (!url) return false;

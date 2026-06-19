@@ -41,7 +41,7 @@ import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Due Date</mat-label>
-          <input matInput [matDatepicker]="picker" formControlName="dueDate">
+          <input matInput [matDatepicker]="picker" formControlName="dueDate" [min]="minDate">
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
         </mat-form-field>
@@ -60,6 +60,7 @@ import { ProgressTrackerService } from '../../shared/progress-tracker.service';
 export class MilestoneDialogComponent implements OnInit {
   form: FormGroup;
   projects: any[] = [];
+  minDate = new Date();
 
   constructor(
     private fb: FormBuilder,

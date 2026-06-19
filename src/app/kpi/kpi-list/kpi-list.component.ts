@@ -59,7 +59,7 @@ import { UpdateKpiDialogComponent } from '../update-kpi-dialog/update-kpi-dialog
                 [color]="kpi.score >= 80 ? 'primary' : kpi.score >= 50 ? 'accent' : 'warn'"></mat-progress-bar>
               <div class="kpi-period">{{ kpi.periodStart | date:'dd MMM' }} – {{ kpi.periodEnd | date:'dd MMM yyyy' }}</div>
             </mat-card-content>
-            <mat-card-actions align="end" *ngIf="kpi.targetValue > 0">
+            <mat-card-actions align="end">
               <button mat-button color="primary" (click)="openUpdateDialog(kpi)">
                 <mat-icon>track_changes</mat-icon> Update Progress
               </button>
