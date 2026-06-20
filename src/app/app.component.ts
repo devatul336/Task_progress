@@ -344,10 +344,11 @@ export class AppComponent implements OnInit {
   filterNavItems() {
     const storageRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole');
     const realRole = this.authService.getUserRole();
-    const role = storageRole ? storageRole : realRole;
+    const role = (storageRole ? storageRole : realRole) || '';
+    const normalizedRole = role.toLowerCase();
     
-    this.isAdmin = role === 'Admin' || role === 'HR';
-    this.isManager = role === 'Manager' || this.isAdmin;
+    this.isAdmin = normalizedRole === 'admin' || normalizedRole === 'hr';
+    this.isManager = normalizedRole === 'manager' || this.isAdmin;
 
     this.filteredNavGroups = this.navGroups.map(group => {
       // Filter out items based on user role

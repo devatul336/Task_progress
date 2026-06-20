@@ -81,15 +81,15 @@ export class AuthService {
    * Checks if the user has Admin or HR role.
    */
   isAdminOrHR(): boolean {
-    const role = this.getUserRole();
-    return role === 'Admin' || role === 'HR' || role === 'Super Admin' || role === 'HRManager';
+    const role = (this.getUserRole() || '').toLowerCase();
+    return role === 'admin' || role === 'hr' || role === 'super admin' || role === 'hrmanager';
   }
 
   /**
    * Checks if the user is a Manager.
    */
   isManager(): boolean {
-    const role = this.getUserRole();
-    return role === 'Manager';
+    const role = (this.getUserRole() || '').toLowerCase();
+    return role === 'manager';
   }
 }
