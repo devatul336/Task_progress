@@ -65,6 +65,7 @@ export class TaskBoardComponent implements OnInit {
     this.filterTag = '';
     this.filterIsOverdue = false;
     this.filterAssignedToMe = false;
+    this.applyFilters();
   }
 
   toggleAssignedToMe() {
@@ -74,9 +75,11 @@ export class TaskBoardComponent implements OnInit {
     } else if (!this.filterAssignedToMe && currentUserId) {
       this.selectedAssigneeIds.delete(currentUserId);
     }
+    this.applyFilters();
   }
 
   columns: KanbanColumn[] = [];
+  displayColumns: any[] = [];
 
   constructor(
     private service: ProgressTrackerService,
@@ -313,6 +316,7 @@ export class TaskBoardComponent implements OnInit {
         if (col) col.tasks.push(task);
       }
     });
+    this.applyFilters();
   }
 
   extractAssignees(tasks: TaskItem[]): void {
@@ -355,17 +359,20 @@ export class TaskBoardComponent implements OnInit {
     } else {
       this.selectedAssigneeIds.add(id);
     }
+    this.applyFilters();
   }
 
   clearAssigneeFilters(): void {
     this.selectedAssigneeIds.clear();
+    this.applyFilters();
   }
 
-  get filteredColumns(): any[] {
+  applyFilters(): void {
     if (!this.searchText && !this.filterPriority && !this.filterEmployee && !this.filterTag && this.selectedAssigneeIds.size === 0 && !this.filterIsOverdue) {
-      return this.columns.map(col => ({ ...col, totalCount: col.tasks.length }));
+      this.displayColumns = this.columns.map(col => ({ ...col, totalCount: col.tasks.length }));
+      return;
     }
-    return this.columns.map(col => ({
+    this.displayColumns = this.columns.map(col => ({
       ...col,
       totalCount: col.tasks.length,
       tasks: col.tasks.filter(t =>
@@ -401,6 +408,7 @@ export class TaskBoardComponent implements OnInit {
         const newCol = this.columns.find(c => c.id === newStatus);
         if (oldCol) oldCol.tasks = oldCol.tasks.filter(t => t.taskItemId !== task.taskItemId);
         if (newCol) newCol.tasks.push({ ...task, status: newStatus, statusName: newCol.label });
+        this.applyFilters();
       }
     });
   }

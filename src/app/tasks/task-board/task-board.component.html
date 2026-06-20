@@ -74,7 +74,7 @@
 
   <!-- Kanban Board -->
   <div class="kanban-board" *ngIf="!loading">
-    <div class="kanban-column" *ngFor="let col of filteredColumns" [style.borderTop]="'3px solid ' + getColor(col.colorClass)">
+    <div class="kanban-column" *ngFor="let col of displayColumns" [style.borderTop]="'3px solid ' + getColor(col.colorClass)">
 
       <!-- Column Header -->
       <div class="col-header">

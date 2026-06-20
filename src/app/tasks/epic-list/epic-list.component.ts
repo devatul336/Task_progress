@@ -268,13 +268,29 @@ export class EpicListComponent implements OnInit {
       next: (tasks) => {
         const allEpics = tasks.filter(t => t.taskType === 1);
         
+        // Build a map of parent -> children to optimize getDescendants from O(N^2) to O(N)
+        const childrenMap = new Map<number, any[]>();
+        for (const t of tasks) {
+          if (t.parentTaskId) {
+            if (!childrenMap.has(t.parentTaskId)) {
+              childrenMap.set(t.parentTaskId, []);
+            }
+            childrenMap.get(t.parentTaskId)!.push(t);
+          }
+        }
+        
         this.epics = allEpics.map(epic => {
-          const getDescendants = (parentId: number, level: number): any[] => {
-            const directChildren = tasks.filter(t => t.parentTaskId === parentId);
+          const getDescendants = (parentId: number, level: number, visited: Set<number> = new Set()): any[] => {
+            if (visited.has(parentId)) return [];
+            visited.add(parentId);
+            
+            const directChildren = childrenMap.get(parentId) || [];
             let descendants: any[] = [];
             for (const child of directChildren) {
-              descendants.push({ ...child, level });
-              descendants.push(...getDescendants(child.taskItemId, level + 1));
+              if (!visited.has(child.taskItemId)) {
+                descendants.push({ ...child, level });
+                descendants.push(...getDescendants(child.taskItemId, level + 1, visited));
+              }
             }
             return descendants;
           };
@@ -394,23 +410,43 @@ export class EpicListComponent implements OnInit {
     return map[type] || 'Task';
   }
 
+  private statusOptionsCache: Record<number, {id: number, label: string}[]> = {
+    1: [{id: 2, label: 'Start Progress'}, {id: 5, label: 'Hold'}],
+    2: [{id: 3, label: 'Review'}, {id: 5, label: 'Hold'}],
+    3: [{id: 4, label: 'Done'}, {id: 2, label: 'Start Progress'}],
+    5: [{id: 2, label: 'Start Progress'}],
+    4: [{id: 2, label: 'Reopen'}]
+  };
+
   getNextStatusOptions(status: number): {id: number, label: string}[] {
-    switch (status) {
-      case 1: return [{id: 2, label: 'Start Progress'}, {id: 5, label: 'Hold'}];
-      case 2: return [{id: 3, label: 'Review'}, {id: 5, label: 'Hold'}];
-      case 3: return [{id: 4, label: 'Approve'}, {id: 5, label: 'Hold'}];
-      case 5: return [{id: 1, label: 'To Do'}, {id: 2, label: 'Resume'}];
-      case 4: return [{id: 2, label: 'Reopen'}];
-      default: return [];
-    }
+    return this.statusOptionsCache[status] || [];
   }
 
   changeEpicStatus(epic: any, newStatus: number, event: Event): void {
     event.stopPropagation();
     
     const updateDto = {
-      ...epic,
+      taskItemId: epic.taskItemId,
+      title: epic.title,
+      description: epic.description,
+      taskType: epic.taskType,
+      priority: epic.priority,
+      assignedToEmployeeId: epic.assignedToEmployeeId,
+      assignedToEmployeeName: epic.assignedToEmployeeName,
+      projectId: epic.projectId,
+      milestoneId: epic.milestoneId,
+      departmentId: epic.departmentId,
+      dueDate: epic.dueDate,
+      startDate: epic.startDate,
+      estimatedHours: epic.estimatedHours || 0,
+      tags: epic.tags,
+      acceptanceCriteria: epic.acceptanceCriteria,
+      isRecurring: epic.isRecurring || false,
+      recurrencePattern: epic.recurrencePattern,
       status: newStatus,
+      completionPercentage: (newStatus === 4 || newStatus === 9) ? 100 : (epic.completionPercentage || 0),
+      actualHours: epic.actualHours || 0,
+      completedDate: (newStatus === 4 || newStatus === 9) ? new Date().toISOString() : epic.completedDate,
       statusChangeRemark: `Status changed via quick action`
     };
 
@@ -433,7 +469,32 @@ export class EpicListComponent implements OnInit {
     if (this.editingEpicId === null) return;
     this.editingEpicId = null;
     
-    this.service.updateTask(epic).subscribe({
+    const updateDto = {
+      taskItemId: epic.taskItemId,
+      title: epic.title,
+      description: epic.description,
+      taskType: epic.taskType,
+      priority: epic.priority,
+      assignedToEmployeeId: epic.assignedToEmployeeId,
+      assignedToEmployeeName: epic.assignedToEmployeeName,
+      projectId: epic.projectId,
+      milestoneId: epic.milestoneId,
+      departmentId: epic.departmentId,
+      dueDate: epic.dueDate,
+      startDate: epic.startDate,
+      estimatedHours: epic.estimatedHours || 0,
+      tags: epic.tags,
+      acceptanceCriteria: epic.acceptanceCriteria,
+      isRecurring: epic.isRecurring || false,
+      recurrencePattern: epic.recurrencePattern,
+      status: epic.status,
+      completionPercentage: epic.completionPercentage || 0,
+      actualHours: epic.actualHours || 0,
+      completedDate: epic.completedDate,
+      statusChangeRemark: `Title updated`
+    };
+    
+    this.service.updateTask(updateDto).subscribe({
       next: () => {
         // Title updated successfully
       },
